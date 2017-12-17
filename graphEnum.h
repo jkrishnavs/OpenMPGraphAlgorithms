@@ -13,6 +13,16 @@ enum executionSection {
 enum errorCodes {
   GRAPH_FILE_NOT_FOUND,
   OUT_OF_MEMORY,
+  ARRAY_ACCESS_OUT_OF_BOUNDS,
+};
+
+
+enum  graphDataType{
+  NODE_T,
+  EDGE_T,
+  INT32,
+  INT64,
+  
 };
 
 

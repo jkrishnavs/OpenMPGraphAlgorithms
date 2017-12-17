@@ -33,7 +33,7 @@ struct edge_dest_t  // for flexible graph representation
 
 static const node_t NIL_NODE = (node_t) -1;
 static const edge_t NIL_EDGE = (edge_t) -1;
-
+static const value_t NIL_VAL = (value_t) -1;
 /*
   Graph is stored in CSR format.
   Graph has N nodes and M edges.

@@ -33,8 +33,11 @@ void printError(errorCodes code) {
      printf("Error: Input Graph File Not Found. \n");
      break;
   case OUT_OF_MEMORY:
-    printf("Error: Unable to allocate memory.\n")
-
+    printf("Error: Unable to allocate memory.\n");
+    break;
+  case ARRAY_ACCESS_OUT_OF_BOUNDS:
+    printf("Error: Element accessed beyond array Size. \n");
+    break;
   default:
     fprintf(stderr,"Unknown error\n")
   }
