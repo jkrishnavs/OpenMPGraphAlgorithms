@@ -75,9 +75,36 @@ struct graph
 
 typdef struct graph graph;
 
-bool isNeighbour(node_t src, node_t dest);
-bool hasEdgeTo(node_t src, node_t dest);
-edge_t get_edge_idx_for_src_dest(node_t src, node_t dest);
+graph* createGraph() {
+  graph* G  = (graph*) malloc(sizeof(graph));
+  assert(G != NULL);
+  G->begin = NULL;
+  G->node_idx = NULL;
+  G->node_idx_src = NULL;  
+  G->r_begin = NULL;
+  G->r_node_idx = NULL;
+  G->r_node_idx_src = NULL;
+  G->e_idx2idx = NULL;
+  G->e_rev2idx = NULL;
+  reverseEdge = false;
+  frozen = false;
+  directed = false;
+  semiSorted = false;
+  numNodes = 0;
+  numEdges = 0;
+  return G;
+}
+
+
+bool isNeighbour(node_t src, node_t dest) {
+  // TODO
+}
+bool hasEdgeTo(node_t src, node_t dest) {
+  // TODO
+}
+edge_t get_edge_idx_for_src_dest(node_t src, node_t dest) {
+  // TODO
+}
 bool has_separate_edge_idx(graph *G) {
   return (G->e_id2idx != NULL);
 }
@@ -95,34 +122,5 @@ bool isEdge(graph *G, edge_id e) {
 }
 
 
-inline void ATOMIC_ADD(value_t &target, value_t val) {
-  if(value == 0) return;
-  #pragma omp atomic
-  target += value;
-}
-
-inline void ATOMIC_MULT(value_t &target, value_t val) {
-  if(value == 1) return;
-  #pragma omp atomic
-  target *= val;
-}
-
-inline void ATOMIC_MIN(value_t &target, value_t value){
-  #pragma omp critical
-  {
-    target = (target < value) ? target : value;
-  }
-}
-
-inline void ATOMIC_AND(value &target, value_t val) {
-  #pragma omp atomic
-  target &= val;
-}
-
-
-inline void ATOMIC_OR(value &target, value_t val) {
-  #pragma omp atomic
-  target |= val;
-} 
 
 #endif
