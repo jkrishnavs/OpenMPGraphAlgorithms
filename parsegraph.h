@@ -1,4 +1,6 @@
 #include "graph.h"
+#include "graphEnum.h"
+#include "print.h"
 #include<string.h>
 #include<file.h>
 #include <ctype.h>
@@ -38,7 +40,7 @@ graph* parseGraph(static const char[] filename) {
 
   f = fopen(filename, "r");
   if(f == NULL) {
-    printf("Error: File Not Found \n");
+    printError(GRAPH_FILE_NOT_FOUND);
     return NULL;
   }
 
