@@ -35,6 +35,11 @@ void skipNlines(FILE* f, int n) {
 }
 
 
+void writeBackGraph(graph *G, static const char[] filename) {
+  // TODO
+}
+
+
 graph* parseGraph(static const char[] filename) {
   FILE *f;
 

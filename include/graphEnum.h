@@ -5,7 +5,7 @@ enum executionSection {
   GRAPHREAD,
   REVERSE_EGDE_CREATION,
   GRAPHWRITE,
-  ALGOKERNEL,
+  ALGO_KERNEL,
   OVERALL
 };
 

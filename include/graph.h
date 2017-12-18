@@ -4,9 +4,6 @@
 //typedefs
 
 
-#include<assert.h>
-#include<stdio.h>
-#include <omp.h>
 #include<stdbool.h>
 
 #ifdef GM_NODE64
