@@ -1,5 +1,11 @@
 #ifndef PRINT_DATA_H
 #define PRINT_DATA_H
+/***
+ * This file contains all user interactions,
+ * Outputs, messages, error and Warnings.
+ **/
+#include<stdio.h>
+#include "graphEnum.h"
 
 void printTiming(executionSection section, double timeelapsed) {
 

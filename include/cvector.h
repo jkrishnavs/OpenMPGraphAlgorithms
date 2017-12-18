@@ -51,11 +51,20 @@ inline void push_back(vector &v, value_t val) {
   v.size ++;
 }
 
-inline value_t data(vector &v, value_t pos) {
+value_t vectorData(vector &v, value_t pos) {
   if(pos > v.size) {
     printError(ARRAY_ACCESS_OUT_OF_BOUNDS);
     return NIL_VAL;
   }
   return v.arr[pos];
+}
+void vectorData(vector &v, value_t pos, value_t val) {
+  if(pos > v.capacity) {
+    printError(ARRAY_ACCESS_OUT_OF_BOUNDS);
+    return;
+  }
+  v.arr[pos] = val;
+  if(pos >= v.size)
+    v.size = pos +1;
 }
 #endif
