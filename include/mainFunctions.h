@@ -32,20 +32,22 @@ void writeGraph(graph* G, static const char[] filename) {
 }
 
 
-
-void runAlgorithm(void* fn) {
+/***
+  * The main Function.
+ **/
+int main(int argc, char** args) {
   struct timeval start, end;
   gettimeofday(&start, NULL);
-  *fn();
+  runalgo(argc, args);
   gettimeofday(&end, NULL);
   printtiming(OVERALL,((end.tv_sec - start.tv_sec)*1000 + ((double)(end.tv_usec - start.tv_usec))/1000));
 }
 
 
-void runKernel(void *fn, void**args) {
+void runKernel(int argc, char** args) {
  struct timeval start, end;
   gettimeofday(&start, NULL);
-  *fn(args);
+  *fn(argc, args);
   gettimeofday(&end, NULL);
   printtiming(ALGO_KERNEL,((end.tv_sec - start.tv_sec)*1000 + ((double)(end.tv_usec - start.tv_usec))/1000));
 }
