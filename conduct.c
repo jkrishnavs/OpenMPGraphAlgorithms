@@ -90,7 +90,8 @@ void conduct(graph *G) {
 
 
 void output(graph *G) {
-
+  printf("sum C = %lf\n", C);
+  return true;
 }
 
 
