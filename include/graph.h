@@ -93,9 +93,6 @@ graph* createGraph() {
 }
 
 
-bool isNeighbour(node_t src, node_t dest) {
-  // TODO
-}
 bool hasEdgeTo(node_t src, node_t dest) {
   // TODO
 }

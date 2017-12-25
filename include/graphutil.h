@@ -5,13 +5,27 @@
 #include "atomics.h"
 #include "print.h"
 #include "vector.h"
-
 /*****
  * These are set of utility functions which follows the same 
  * algorithm as in GreenMarl code. Some of these functions were
  * part of the base gm_graph class. For more details 
  * see original functions in GreenMarl code
  *****/
+
+
+bool isNeighbour(graph *G, node_t src, node_t dest) {
+  bool neighbour = false;
+  for(edge_t s = G->begin[src]; s < G->begin[x0+1]; s++) {
+    node_t y = G->node_idx[s];
+    if(y == dest) {
+      neighbour = true;
+      break;
+    }
+  }
+  return neighbour;
+}
+
+
 
 /**
  * see gm_graph::create_reverse_edges()...
