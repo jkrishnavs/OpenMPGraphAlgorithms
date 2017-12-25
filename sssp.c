@@ -1,0 +1,134 @@
+/**
+ * Original base algorithm from GreenMarl.
+ * Otimized and edited by
+ * edited by Jyothi Krishna V S.
+ */
+
+#include "include/graph.h"
+#include "include/mainFunctions.h"
+#include "include/parsegraph.h"
+#include "include/print.h"
+#include <stdlib.h>
+#define NO_OF_ARGS 4
+
+
+node_t root;
+uint32_t* dist;
+uint32_t* len;
+
+/* 
+   Benign non determinism present
+   The outer
+
+ */
+
+void sssp(graph *G) {
+  initprofiling();
+  bool fin = false ;
+  
+  bool* updated = (bool*) malloc(G->numNodes * sizeof(bool));
+  bool* updatedNext = (bool*) malloc(G->numNodes *sizeof(bool));
+  //unint32_t* updatedDist = (unint32_t*) malloc (G->numNodes *  sizeof(unint32_t));
+  assert(updated != NULL);
+  //assert(updatedDist != NULL);
+  
+#pragma omp parallel for
+  for (node_t t0 = 0; t0 < G.num_nodes(); t0 ++) {
+    dist[t0] = (t0 == root)?0:UINT_MAX ;
+    updated[t0] = (t0 == root)?true:false;
+    // updatedDist[t0] = (t0 == root)?0:UINT_MAX ;
+  }
+  
+  
+  while (fin == false) {
+    bool __E8 = false ;      
+#pragma omp parallel for schedule(dynamic,128)
+    for (node_t n = 0; n < G->numNodes; n ++) {
+      if (updated[n]) {
+	for (edge_t s_idx = G->begin[n];s_idx < G->begin[n+1] ; s_idx ++) {
+	  node_t s = G->node_idx [s_idx];
+	  edge_t e;
+	  e = s_idx ;
+	  uint32_t newDist = dist[n] + len[e];
+	  if (dist[s]> newDist) {
+#pragma omp critical // TODO should we go for scoped lock?
+	    {
+	      updatedNext[s]  = true;
+	      dist[s] = newDist;
+	    }
+
+#pragma omp atomic
+	    __E8 |= true;
+	  }
+	}
+      }
+    }
+    bool *temp = updated;
+    updated = updateNext;
+    updatedNext = temp;  
+  }
+
+  stopprofiling();
+}
+
+
+void output(graph *G) {
+
+  int counter  = 0;
+  
+  printf(" * The shortest path to the following nodes from the root Nod %d\n", root);
+  for (node_t n = 0; n < G->numNodes && counter < 5; n++) {
+    if(dist[n] != UINT_MAX && n != root) {
+      printf(" %d -> %d : %ud \n", root, n, dist[n]);
+      counter ++
+    }
+  }  
+}
+
+
+
+/***
+ * Common entry point for all algorithms,
+ **/
+int runalgo(int argc,char** argv) {
+  long seed  = 0;
+  unint32_t maxLength = 10;
+  root = 0;
+  if(argc < NO_OF_ARGS-1) {
+    const char argList[NO_OF_ARGS] = {" <inputfile> " , "[root = 0]", "[maxLength=10]","[seed = 0]"};
+    printError(INCORRECT_ARG_LIST, NO_OF_ARGS, argList);
+    return -1;
+  }
+  graph* G = parseGraph(argv[1]);
+  len = (uint32_t*) malloc (G->numEdges * malloc (uint32_t));
+  /*
+    Random generation of edge lengths
+   */
+  srand(seed);
+
+  for(edge_t e = 0; e < G->numEdges; e++) {
+    len[e] = (rand()%maxLength + 1);
+  }
+  dist = (uint32_t*) malloc (G->numNodes * malloc (uint32_t));
+  assert(dist != NULL);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
