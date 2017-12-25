@@ -73,15 +73,12 @@ void pageRank(graph* G) {
             }
 #pragma omp atomic
 	diff += diff_prv;
+	#pragma omp for
+	for (node_t i3 = 0; i3 < G->numNodes; i3 ++) 
+	  pg_rank[i3] = pg_rank_nxt[i3] ;
       }
-      
-#pragma omp parallel for
-      for (node_t i3 = 0; i3 < G->numNodes; i3 ++) 
-	pg_rank[i3] = pg_rank_nxt[i3] ;
-
-        cnt = cnt + 1 ;
-    }
-    while ((diff > eprime) && (cnt < max));
+      cnt = cnt + 1 ;
+    } while ((diff > eprime) && (cnt < max));
 
 
     gm_rt_cleanup();
