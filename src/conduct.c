@@ -4,11 +4,11 @@
  * edited by Jyothi Krishna V S.
  */
 
-#include "include/graph.h"
-#include "include/mainFunctions.h"
-#include "include/parsegraph.h"
-#include "include/print.h"
-#include "include/powerandperformancetracking.h"
+#include "graph.h"
+#include "mainFunctions.h"
+#include "parsegraph.h"
+#include "print.h"
+#include "powerandperformancetracking.h"
 
 #define NO_OF_ARGS 1
 
