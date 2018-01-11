@@ -3,3 +3,7 @@
 .#*
 /inputGraphs/*
 /Makefile.in
+/obj/*
+/bin/*
+/precompiled/*
+/debug/*

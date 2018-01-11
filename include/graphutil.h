@@ -110,7 +110,7 @@ void createReverseEdges(graph* G) {
     for (edge_t e = G->begin[i]; e < G->begin[i + 1]; e++) {
       node_t dest = G->node_idx[e];
       edge_t location;
-      #pragma omp atomic 
+      #pragma omp atomic capture
        location = G->r_begin[dest]++;
       loc[e] = location;	
     }
@@ -211,13 +211,13 @@ void semisortMain(node_t N, edge_t M, edge_t* begin, node_t* dest, edge_t* aux, 
 #pragma omp parallel
   {
     
-    vector* index;
+    vector* index = NULL;
     initVector(index, NODE_T);
-    vector* destCopy;
+    vector* destCopy = NULL;
     initVector(destCopy, NODE_T);
-    vector* auxCopy;
+    vector* auxCopy = NULL;
     initVector(auxCopy, EDGE_T);
-    vector* aux2Copy;
+    vector* aux2Copy = NULL;
     initVector(aux2Copy, EDGE_T); 
 
 #pragma omp for schedule(dynamic,4096) nowait

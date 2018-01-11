@@ -44,7 +44,7 @@ void writeGraph(graph* G, const char* filename) {
 int main(int argc, char** args) {
   struct timeval start, end;
   gettimeofday(&start, NULL);
-  int retVal = runalgo(argc, args);
+  runalgo(argc, args);
   gettimeofday(&end, NULL);
   printTiming(OVERALL,((end.tv_sec - start.tv_sec)*1000 + ((double)(end.tv_usec - start.tv_usec))/1000));
 }

@@ -89,9 +89,16 @@ OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 SUCH DAMAGE.
 
 5. Compilation
-   i. make
+   Run ./configure.sh before running make.
+   
+   make modes:
+   i. make 
    ii. make intermediate
-   iii: make debug:
+   iii: make debug
+
+
+   To change chunk size
+   make SET_CHUNKSIZE=<newchunkSize>
    
 
    Place Holder header:
