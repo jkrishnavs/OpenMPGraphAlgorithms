@@ -5,6 +5,10 @@
 
 
 #include<stdbool.h>
+#include<stdint.h>
+#include<stdlib.h>
+#include<stddef.h>
+#include<assert.h>
 
 #ifdef GM_NODE64
 typedef int64_t edge_t;
@@ -70,7 +74,7 @@ struct graph
   bool semiSorted;  
 };
 
-typdef struct graph graph;
+typedef struct graph graph;
 
 graph* createGraph() {
   graph* G  = (graph*) malloc(sizeof(graph));
@@ -82,25 +86,27 @@ graph* createGraph() {
   G->r_node_idx = NULL;
   G->r_node_idx_src = NULL;
   G->e_idx2idx = NULL;
-  G->e_rev2idx = NULL;
-  reverseEdge = false;
-  frozen = false;
-  directed = false;
-  semiSorted = false;
-  numNodes = 0;
-  numEdges = 0;
+  G->e_revidx2idx = NULL;
+  G->reverseEdge = false;
+  G->frozen = false;
+  G->directed = false;
+  G->semiSorted = false;
+  G->numNodes = 0;
+  G->numEdges = 0;
   return G;
 }
 
 
 bool hasEdgeTo(node_t src, node_t dest) {
   // TODO
+  return false;
 }
 edge_t get_edge_idx_for_src_dest(node_t src, node_t dest) {
   // TODO
+  return false;
 }
 bool has_separate_edge_idx(graph *G) {
-  return (G->e_id2idx != NULL);
+  return (G->e_idx2idx != NULL);
 }
 
 bool is_edge_source_ready(graph * G) {
@@ -112,7 +118,7 @@ bool isNode( graph *G, node_id n) {
 }
 
 bool isEdge(graph *G, edge_id e) {
-  return (e < F->numEdges);
+  return (e < G->numEdges);
 }
 
 

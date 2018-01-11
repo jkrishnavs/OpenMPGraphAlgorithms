@@ -4,7 +4,9 @@
 #include "graph.h"
 #include "atomics.h"
 #include "print.h"
-#include "vector.h"
+#include "cvector.h"
+
+
 /*****
  * These are set of utility functions which follows the same 
  * algorithm as in GreenMarl code. Some of these functions were
@@ -12,10 +14,19 @@
  * see original functions in GreenMarl code
  *****/
 
+/* Declarations */
+bool isNeighbour(graph *G, node_t src, node_t dest);
+void semisort(graph *G);
+void semisortReverse(graph *G);
+void createReverseEdges(graph* G);
+void prepareEdgeSource(graph *G);
+void prepareEdgeSourceReverse(graph *G);
+void freezeGraph(graph * G);
+void semisortMain(node_t N, edge_t M, edge_t* begin, node_t* dest, edge_t* aux, edge_t* aux2);
 
 bool isNeighbour(graph *G, node_t src, node_t dest) {
   bool neighbour = false;
-  for(edge_t s = G->begin[src]; s < G->begin[x0+1]; s++) {
+  for(edge_t s = G->begin[src]; s < G->begin[src+1]; s++) {
     node_t y = G->node_idx[s];
     if(y == dest) {
       neighbour = true;
@@ -24,6 +35,48 @@ bool isNeighbour(graph *G, node_t src, node_t dest) {
   }
   return neighbour;
 }
+
+/**
+ * see gm_graph::do_semi_sort()...
+ **/
+void semisort(graph *G) {
+  if(G->semiSorted == true) return;
+  if(G->frozen == false) freezeGraph(G);
+
+
+  G->e_idx2idx = (edge_t*) malloc(sizeof(edge_t)* G->numEdges);
+  assert(G->e_idx2idx != NULL);
+#pragma omp parallel for schedule(dynamic,128)
+  for (node_t i = 0; i < G->numNodes; i++) {
+    for (edge_t j = G->begin[i]; j < G->begin[i + 1]; j++) {
+      G->e_idx2idx[j] = j;    
+    }
+  }
+
+  semisortMain(G->numNodes, G->numEdges, G->begin, G->node_idx, G->e_idx2idx, G->e_idx2idx);
+  
+#pragma omp parallel for
+  for (edge_t j = 0; j < G->numEdges; j++) {
+    edge_t id = G->e_idx2idx[j];
+    G->e_idx2idx[id] = j;
+  }
+  
+
+  if (G->reverseEdge) {
+    semisortReverse(G);
+  }
+
+  G->semiSorted = true;
+}
+
+/**
+ * see gm_graph::do_semi_sort_reverse()...
+ */
+void semisortReverse(graph *G) {
+  assert(G->semiSorted == true);
+  semisortMain(G->numNodes, G->numEdges, G->r_begin, G->r_node_idx, G->e_revidx2idx, NULL);
+}
+
 
 
 
@@ -36,13 +89,13 @@ void createReverseEdges(graph* G) {
   if(G->reverseEdge == true) return;
   if(G->frozen == false) freezeGraph(G);
   node_t nodes = G->numNodes;
-  node_t edges = G->numEdges;
+  edge_t edges = G->numEdges;
   G->r_begin = (edge_t*) malloc ((nodes+1)* sizeof(edge_t));
   assert(G->r_begin != NULL);
     
   G->r_node_idx = (node_t*) malloc ((edges)* sizeof(node_t));
   assert(G->r_node_idx != NULL);
-  edge_t* loc = (egde_t*) malloc ((nodes)* sizeof(edge_t));
+  edge_t* loc = (edge_t*) malloc ((nodes)* sizeof(edge_t));
   assert(loc != NULL);
   // initialize
   
@@ -56,7 +109,9 @@ void createReverseEdges(graph* G) {
   for (node_t i = 0; i < nodes; i++) {
     for (edge_t e = G->begin[i]; e < G->begin[i + 1]; e++) {
       node_t dest = G->node_idx[e];
-      edge_t location = ATOMIC_INC(&(G->r_begin[dest]));
+      edge_t location;
+      #pragma omp atomic 
+       location = G->r_begin[dest]++;
       loc[e] = location;	
     }
   }
@@ -87,52 +142,12 @@ void createReverseEdges(graph* G) {
   
   G->reverseEdge = true;  
   if (G->semiSorted) semisortReverse(G);
-  if (G->node_idx_src != NULL) prepareEdgeSourcReverse();
+  if (G->node_idx_src != NULL) prepareEdgeSourceReverse(G);
 
   free(loc);     
 }
 
 
-/**
- * see gm_graph::do_semi_sort()...
- **/
-void semisort(graph *G) {
-  if(G->semiSorted == true) return;
-  if(G->frozen == false) freezeGraph(G);
-
-
-  G->e_idx2idx = (edge_t*) malloc(sizeof(edge_t)* G->numEdges);
-  assert(G->e_idx2idx != NULL);
-#pragma omp parallel for schedule(dynamic,128)
-  for (node_t i = 0; i < G->numNodes; i++) {
-    for (edge_t j = G->begin[i]; j < G->begin[i + 1]; j++) {
-      G->e_idx2idx[j] = j;    
-    }
-  }
-
-  semisortMain(G->numNodes, G->numEdges, G->begin, G->node_idx, G->e_idx2idx, G->e_idx2id);
-  
-#pragma omp parallel for
-  for (edge_t j = 0; j < G->numEdges; j++) {
-    edge_t id = G->e_idx2id[j];
-    G->e_id2idx[id] = j;
-  }
-  
-
-  if (G->reverseEdge) {
-    do_semi_sort_reverse(G);
-  }
-
-  G->semiSorted = true;
-}
-
-/**
- * see gm_graph::do_semi_sort_reverse()...
- */
-void semisortReverse(graph *G) {
-  assert(G->semiSorted == true);
-  semisortMain(G->numNodes, G->numEdges, G->r_begin, G->r_node_idx, G->e_rev2idx, NULL);
-}
 
 
 /**
@@ -196,13 +211,13 @@ void semisortMain(node_t N, edge_t M, edge_t* begin, node_t* dest, edge_t* aux, 
 #pragma omp parallel
   {
     
-    vector index;
+    vector* index;
     initVector(index, NODE_T);
-    vector destCopy;
+    vector* destCopy;
     initVector(destCopy, NODE_T);
-    vector auxCopy;
+    vector* auxCopy;
     initVector(auxCopy, EDGE_T);
-    vector aux2Copy;
+    vector* aux2Copy;
     initVector(aux2Copy, EDGE_T); 
 
 #pragma omp for schedule(dynamic,4096) nowait
@@ -217,18 +232,18 @@ void semisortMain(node_t N, edge_t M, edge_t* begin, node_t* dest, edge_t* aux, 
       edge_t* aux2Local = (aux2 == NULL)?NULL:aux2 + begin[i];
       
       if (vectorCapacity(index) < (size_t) sz) {
-	vectorReserve(index);
-	vectorReserve(destCopy);
-	vectorReserve(auxCopy);
-	vectorReserve(aux2Copy);
+	vectorReserve(index, sz);
+	vectorReserve(destCopy, sz);
+	vectorReserve(auxCopy, sz);
+	vectorReserve(aux2Copy, sz);
 	
       }
       for(edge_t j=0;j < sz; j++) {
-	vectorData(index, j,j);
-	vectorData(destCopy, j, destLocal[j]);
-	vectorData(auxCopy, j, auxLocal[j]);
+	setVectorData(index, j,j);
+	setVectorData(destCopy, j, destLocal[j]);
+	setVectorData(auxCopy, j, auxLocal[j]);
 	if (aux2 != NULL)
-	  vectorData(aux2Copy, j, aux2Local[j]);
+	  setVectorData(aux2Copy, j, aux2Local[j]);
       }
       // TODO sort.
       // sort indicies
@@ -241,10 +256,10 @@ void semisortMain(node_t N, edge_t M, edge_t* begin, node_t* dest, edge_t* aux, 
        **/
 
       for(edge_t j=0;j < sz; j++) {
-	destLocal[j] = vectorData(destCopy, vectorData(index, j));
-	auxLocal[j] = vectorData(auxCopy, vectorData(index, j) );
+	destLocal[j] = getVectorData(destCopy, getVectorData(index, j));
+	auxLocal[j] = getVectorData(auxCopy, getVectorData(index, j) );
 	if (aux2 != NULL)
-	  aux2Local[j] = vectorData(aux2Copy, vectorData(index,j));
+	  aux2Local[j] = getVectorData(aux2Copy, getVectorData(index,j));
       }
     }
   }

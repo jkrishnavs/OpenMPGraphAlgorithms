@@ -16,10 +16,10 @@ void printTiming(executionSection section, double timeelapsed) {
   case GRAPHWRITE:
     printf("Writing to File, Time Elapsed =\t%lf ms\n", timeelapsed);
     break;
-  case REVERSE_EDGE_CREATTION:
+  case REVERSE_EDGE_CREATION:
     printf("Reverse Edge Creation, Time Elapsed =\t%lf ms\n", timeelapsed);
      break;
-  case ALGOKERNEL:
+  case ALGO_KERNEL:
     printf("Algorithm Running Time =\t%lf ms\n", timeelapsed);
     break;
   case OVERALL:
@@ -31,7 +31,7 @@ void printTiming(executionSection section, double timeelapsed) {
 
 }
 
-void pringMsg(int NoOfmsgs, char**msgs) {
+void pringMsg(int NoOfMsgs, char**msgs) {
   int i;
   for(i=0; i< NoOfMsgs;i++) {
     printf("\t%s", msgs[i]);
@@ -39,7 +39,7 @@ void pringMsg(int NoOfmsgs, char**msgs) {
 }
 
 
-void printError(errorCodes code, int NoOfmsgs = 0, char** msgs =  NULL) {
+void printError(errorCodes code, int NoOfMsgs,const char** msgs) {
 
   switch(code) {
   case GRAPH_FILE_NOT_FOUND:
@@ -62,7 +62,7 @@ void printError(errorCodes code, int NoOfmsgs = 0, char** msgs =  NULL) {
   case TASKLOOP_NOTENABLED:
     printf("Error: Taskloop not available with the current system\n");
   default:
-    fprintf(stderr,"Unknown error\n")
+    fprintf(stderr,"Unknown error\n");
   }
 
 }

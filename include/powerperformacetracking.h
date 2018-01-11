@@ -9,7 +9,7 @@
 
 void inittracking() {
   energymonitor__setfilename("prof.csv");
-  energymonitor__init(cores,0.2);
+  energymonitor__init(ONLINECORES,0.2);
   energymonitor__trackpoweronly();
   energymonitor__startprofiling();
 }

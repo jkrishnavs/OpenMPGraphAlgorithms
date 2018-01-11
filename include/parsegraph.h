@@ -1,21 +1,24 @@
+#ifndef PARSE_GRAPH_H
+#define PARSE_GRAPH_H
 #include "graph.h"
 #include "graphEnum.h"
 #include "print.h"
-#include<string.h>
-#include<file.h>
+#include <string.h>
+#include <stdio.h>
 #include <ctype.h>
 
 
-int isNumber(char[] str) {
-  i=0;
-  while(s[i] != '\0') {
-    if (isdigit(s[i]) == 0) return 0;
+int isNumber(char str[]) {
+  int i=0;
+  while(str[i] != '\0') {
+    if (isdigit(str[i]) == 0) return 0;
   }
   return 1;
 }
 
 value_t numLinesfromCur(FILE *f) {
   int lines  = 0;
+  char ch;
   while(!feof(f)) {
       ch = fgetc(f);
       if(ch == '\n')
@@ -29,23 +32,23 @@ value_t numLinesfromCur(FILE *f) {
 void skipNlines(FILE* f, int n) {
   int counter  = 0;
   while(!feof(f) && counter < n) {
-    fscanf(f, "%*[^\n]\n", NULL);
+    fscanf(f,"%*[^\n]\n");
     counter++;
   }
 }
 
 
-void writeBackGraph(graph *G, static const char[] filename) {
+void writeBackGraph(graph *G, const char* filename) {
   // TODO
 }
 
 
-graph* parseGraph(static const char[] filename) {
+graph* parseGraph(const char* filename) {
   FILE *f;
 
   f = fopen(filename, "r");
   if(f == NULL) {
-    printError(GRAPH_FILE_NOT_FOUND);
+    printError(GRAPH_FILE_NOT_FOUND,0, NULL);
     return NULL;
   }
 
@@ -68,13 +71,13 @@ graph* parseGraph(static const char[] filename) {
   char str[20];
 
   node_t counter  = 0;
-  int isNumber = 0;
+  int isnumber = 0;
   // Parse all nodes
-  
-  while(f != EOF && isnumber == 0) {
-    fscanf(f,"%d %s", x, str);
-    isNumber = isNumber(str);
-    if(isNumber == 0) {
+  int r = 1;
+  while(r != EOF && isnumber == 0) {
+    r = fscanf(f,"%d %s", &x, str);
+    isnumber = isNumber(str);
+    if(isnumber == 0) {
       /***
 	  TODO: We need to revist this.
 	  Now we assume all inpt nodes contains 0 to N-1 nodes.
@@ -93,9 +96,9 @@ graph* parseGraph(static const char[] filename) {
 
   fseek(f,0,SEEK_SET); // rewind
   skipNlines(f, counter);  
-  assert(f != EOF);
+  assert(!feof(f));
 
-  G->node_idx = (node_t*) malloc(sizeof(node_t) * G->num_Edges);
+  G->node_idx = (node_t*) malloc(sizeof(node_t) * G->numEdges);
 
   assert(G->node_idx != NULL);
 
@@ -104,8 +107,9 @@ graph* parseGraph(static const char[] filename) {
   node_t y;
   node_t curSource = 0;
   G->begin[curSource] = 0;
-  while(f != EOF) {   
-    fscanf(f, "%d %d", x,y);
+  r = 1;
+  while(r != EOF) {   
+    r = fscanf(f, "%d %d", &x, &y);
     G->node_idx[edgeid] = y;
     // format check
     if(x != curSource) {
@@ -124,3 +128,4 @@ graph* parseGraph(static const char[] filename) {
 }
 
 
+#endif

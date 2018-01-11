@@ -8,6 +8,7 @@
 #include "mainFunctions.h"
 #include "parsegraph.h"
 #include "print.h"
+#include "powerandperformancetracking.h"
 
 #define NO_OF_ARGS 4
 
@@ -15,6 +16,8 @@ double e;
 double d;
 int32_t maxIters;
 float* pg_rank;
+
+
 
 
 void pageRank(graph* G) {
@@ -47,11 +50,7 @@ void pageRank(graph* G) {
 #pragma omp for schedule(guided, PAR_CHUNKSIZE)
 #elif defined(PARFOR_DYNAMIC)
 #pragma omp for schedule(dynamic, PAR_CHUNKSIZE)
-#elif defined(TASKLOOP)
-#ifndef TASKLOOP_DEFINED
-	printError(TASKLOOP_NOTENABLED);
-	return
-#endif
+#elif defined(TASKLOOP_DEFINED)
 #pragma omp taskloop
 #else
 #pragma omp  for schedule(static)
@@ -82,7 +81,7 @@ void pageRank(graph* G) {
 
 
     gm_rt_cleanup();
-    energymonitor__stopprofiling();
+    endtracking();
 }
 
 
@@ -124,12 +123,13 @@ int runalgo(int argc,char** argv) {
     flag = 4;
   
   if(flag > 0) {
-    const char argList[NO_OF_ARGS] = {" <inputfile>", "[max_iteration=100]", "[eplision=0.001]", "[delta=0.85]" };
+    const char* argList[NO_OF_ARGS] = {" <inputfile>", "[max_iteration=100]", "[eplision=0.001]", "[delta=0.85]" };
     printError(INCORRECT_ARG_LIST, NO_OF_ARGS, argList);
     return -1;
   }
   pg_rank = (float*) malloc (G->numNodes * sizeof(float));
   assert(pg_rank != NULL);
+  return 0;
 }
 
 
@@ -139,6 +139,9 @@ int runalgo(int argc,char** argv) {
 
 
 
+inline void kernel(graph* G) {
+  pageRank(G);
+}
 
 
 

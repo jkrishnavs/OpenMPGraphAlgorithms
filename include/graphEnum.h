@@ -1,31 +1,31 @@
 #ifndef _GRAPH_ENUM_H
 #define _GRAPH_ENUM_H
 
-enum executionSection {
+typedef enum executionSection {
   GRAPHREAD,
-  REVERSE_EGDE_CREATION,
+  REVERSE_EDGE_CREATION,
   GRAPHWRITE,
   ALGO_KERNEL,
   OVERALL
-};
+}executionSection;
 
 
-enum errorCodes {
+typedef enum errorCodes {
   GRAPH_FILE_NOT_FOUND,
   OUT_OF_MEMORY,
   ARRAY_ACCESS_OUT_OF_BOUNDS,
   TASKLOOP_NOTENABLED,
   INCORRECT_ARG_LIST
-};
+}errorCodes;
 
 
-enum  graphDataType{
+typedef enum  graphDataType{
   NODE_T,
   EDGE_T,
   INT32,
   INT64,
   
-};
+}graphDataType;
 
 
 

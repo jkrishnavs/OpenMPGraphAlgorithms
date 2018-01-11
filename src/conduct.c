@@ -13,7 +13,8 @@
 #define NO_OF_ARGS 1
 
 double __conduct = 0;
-int32_t *G_member; 
+int32_t *G_member;
+
 
 void conduct(graph *G) {
   inittracking();
@@ -27,7 +28,17 @@ void conduct(graph *G) {
     {
       int32_t __S2_prv = 0 ;
       __S2_prv = 0 ;
-#pragma omp for nowait
+
+
+#if defined(PARFOR_GUIDED)   
+#pragma omp parallel for schedule(guided, PAR_CHUNKSIZE)
+#elif defined(PARFOR_DYNAMIC)
+#pragma omp parallel for schedule(dynamic, PAR_CHUNKSIZE)
+#elif defined(TASKLOOP_DEFINED)
+#pragma omp parallel taskloop
+#else
+#pragma omp parallel for schedule(static)
+#endif
       for (node_t u = 0; u < G->numNodes; u ++) 
 	if ((G_member[u] == num))
 	  {
@@ -42,8 +53,15 @@ void conduct(graph *G) {
     {
       int32_t __S3_prv = 0 ;
       __S3_prv = 0 ;
-      
-#pragma omp for nowait
+#if defined(PARFOR_GUIDED)   
+#pragma omp parallel for schedule(guided, PAR_CHUNKSIZE)
+#elif defined(PARFOR_DYNAMIC)
+#pragma omp parallel for schedule(dynamic, PAR_CHUNKSIZE)
+#elif defined(TASKLOOP_DEFINED)
+#pragma omp parallel taskloop
+#else
+#pragma omp parallel for schedule(static)
+#endif
       for (node_t u0 = 0; u0 < G->numNodes; u0 ++) 
 	if ((G_member[u0] != num))
 	  {
@@ -60,7 +78,16 @@ void conduct(graph *G) {
     {
       int32_t __S4_prv = 0 ;
       __S4_prv = 0 ;
-#pragma omp for nowait schedule(dynamic,128)
+
+#if defined(PARFOR_GUIDED)   
+#pragma omp parallel for schedule(guided, PAR_CHUNKSIZE)
+#elif defined(PARFOR_DYNAMIC)
+#pragma omp parallel for schedule(dynamic, PAR_CHUNKSIZE)
+#elif defined(TASKLOOP_DEFINED)
+#pragma omp parallel taskloop
+#else
+#pragma omp parallel for schedule(static)
+#endif
       for (node_t u1 = 0; u1 < G->numNodes; u1 ++) 
 	if ((G_member[u1] == num))
 	  {
@@ -84,7 +111,7 @@ void conduct(graph *G) {
   else 
     C += ((float)__S4) / m;
   }
-  stoptracking();
+  endtracking();
   
 }
 
@@ -100,7 +127,7 @@ void output(graph *G) {
  **/
 int runalgo(int argc,char** argv) {
   if(argc < NO_OF_ARGS-1) {
-    const char argList[NO_OF_ARGS] = {" <inputfile> " };
+    const char* argList[NO_OF_ARGS] = {" <inputfile> " };
     printError(INCORRECT_ARG_LIST, NO_OF_ARGS, argList);
     return -1;
   }
@@ -121,9 +148,13 @@ int runalgo(int argc,char** argv) {
       G_member[i] = 2;  // 30%
     else
       G_member[i] = 3;  // 40%
-  } 
+  }
+  return 0;
 }
 
+inline void kernel(graph *G) {
+  conduct(G);
+}
 
 
 

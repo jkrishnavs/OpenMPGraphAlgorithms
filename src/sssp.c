@@ -7,8 +7,11 @@
 #include "graph.h"
 #include "mainFunctions.h"
 #include "parsegraph.h"
+#include "powerperformacetracking.h"
 #include "print.h"
 #include <stdlib.h>
+#include <limits.h>
+
 #define NO_OF_ARGS 4
 
 
@@ -22,8 +25,10 @@ uint32_t* len;
 
  */
 
+
+
 void sssp(graph *G) {
-  initprofiling();
+  inittracking();
   bool fin = false ;
   
   bool* updated = (bool*) malloc(G->numNodes * sizeof(bool));
@@ -32,8 +37,17 @@ void sssp(graph *G) {
   assert(updated != NULL);
   //assert(updatedDist != NULL);
   
-#pragma omp parallel for
-  for (node_t t0 = 0; t0 < G.num_nodes(); t0 ++) {
+  node_t t0 ;
+#if defined(PARFOR_GUIDED)   
+#pragma omp for schedule(guided, PAR_CHUNKSIZE)
+#elif defined(PARFOR_DYNAMIC)
+#pragma omp for schedule(dynamic, PAR_CHUNKSIZE)
+#elif defined(TASKLOOP_DEFINED)
+#pragma omp taskloop
+#else
+#pragma omp  for schedule(static)
+#endif
+  for (t0= 0; t0 < G->numNodes; t0 ++) {
     dist[t0] = (t0 == root)?0:UINT_MAX ;
     updated[t0] = (t0 == root)?true:false;
     // updatedDist[t0] = (t0 == root)?0:UINT_MAX ;
@@ -42,7 +56,16 @@ void sssp(graph *G) {
   
   while (fin == false) {
     bool __E8 = false ;      
-#pragma omp parallel for schedule(dynamic,128)
+
+#if defined(PARFOR_GUIDED)   
+#pragma omp for schedule(guided, PAR_CHUNKSIZE)
+#elif defined(PARFOR_DYNAMIC)
+#pragma omp for schedule(dynamic, PAR_CHUNKSIZE)
+#elif defined(TASKLOOP_DEFINED)
+#pragma omp taskloop
+#else
+#pragma omp  for schedule(static)
+#endif
     for (node_t n = 0; n < G->numNodes; n ++) {
       if (updated[n]) {
 	for (edge_t s_idx = G->begin[n];s_idx < G->begin[n+1] ; s_idx ++) {
@@ -64,11 +87,11 @@ void sssp(graph *G) {
       }
     }
     bool *temp = updated;
-    updated = updateNext;
+    updated = updatedNext;
     updatedNext = temp;  
   }
 
-  stopprofiling();
+  endtracking();
 }
 
 
@@ -80,7 +103,7 @@ void output(graph *G) {
   for (node_t n = 0; n < G->numNodes && counter < 5; n++) {
     if(dist[n] != UINT_MAX && n != root) {
       printf(" %d -> %d : %ud \n", root, n, dist[n]);
-      counter ++
+      counter ++;
     }
   }  
 }
@@ -92,15 +115,15 @@ void output(graph *G) {
  **/
 int runalgo(int argc,char** argv) {
   long seed  = 0;
-  unint32_t maxLength = 10;
+  uint32_t maxLength = 10;
   root = 0;
   if(argc < NO_OF_ARGS-1) {
-    const char argList[NO_OF_ARGS] = {" <inputfile> " , "[root = 0]", "[maxLength=10]","[seed = 0]"};
+    const char* argList[NO_OF_ARGS] = {" <inputfile> " , "[root = 0]", "[maxLength=10]","[seed = 0]"};
     printError(INCORRECT_ARG_LIST, NO_OF_ARGS, argList);
     return -1;
   }
   graph* G = parseGraph(argv[1]);
-  len = (uint32_t*) malloc (G->numEdges * malloc (uint32_t));
+  len = (uint32_t*) malloc (G->numEdges * sizeof(uint32_t));
   /*
     Random generation of edge lengths
    */
@@ -109,14 +132,20 @@ int runalgo(int argc,char** argv) {
   for(edge_t e = 0; e < G->numEdges; e++) {
     len[e] = (rand()%maxLength + 1);
   }
-  dist = (uint32_t*) malloc (G->numNodes * malloc (uint32_t));
+  dist = (uint32_t*) malloc (G->numNodes * sizeof (uint32_t));
   assert(dist != NULL);
+  runKernel(G);
+  return 0;
 }
 
 
 
 
 
+
+inline void kernel(graph *G) {
+  sssp(G);
+}
 
 
 

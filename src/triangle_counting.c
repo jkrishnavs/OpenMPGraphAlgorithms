@@ -13,6 +13,8 @@
 #define NO_OF_ARGS 1
 int64_t T = 0 ;
 
+
+
 void triangle_counting(graph *G) {
   inittracking();
 #pragma omp parallel
@@ -23,11 +25,7 @@ void triangle_counting(graph *G) {
 #pragma omp for schedule(guided, PAR_CHUNKSIZE)
 #elif defined(PARFOR_DYNAMIC)
 #pragma omp for schedule(dynamic, PAR_CHUNKSIZE)
-#elif defined(TASKLOOP)
-#ifndef TASKLOOP_DEFINED
-    printError(TASKLOOP_NOTENABLED);
-    return
-#endif
+#elif defined(TASKLOOP_DEFINED)
 #pragma omp taskloop
 #else
 #pragma omp  for schedule(static)
@@ -54,7 +52,7 @@ void triangle_counting(graph *G) {
 #pragma omp atomic
     T += T_private;
   }
-  stop_profiling();
+  endtracking();
 }
 
 void output(graph *G) {
@@ -68,14 +66,18 @@ void output(graph *G) {
  **/
 int runalgo(int argc,char** argv) {
   if(argc < NO_OF_ARGS-1) {
-    const char argList[NO_OF_ARGS] = {" <inputfile> " };
+    const char* argList[NO_OF_ARGS] = {" <inputfile> " };
     printError(INCORRECT_ARG_LIST, NO_OF_ARGS, argList);
     return -1;
   }
   graph* G = parseGraph(argv[1]);
-  
+  return 0;
 }
 
+
+inline void kernel(graph *G) {
+  triangle_counting(G);
+}
 
 
 

@@ -9,11 +9,13 @@
 #include "parsegraph.h"
 #include "print.h"
 #include "powerandperformancetracking.h"
-#include "includenodeIntMap.h"
+#include "nodeIntMap.h"
+
 #define NO_OF_ARGS 1
 
 
 node_t* comm = NULL;
+
 
 
 void communities(graph* G) {
@@ -26,11 +28,7 @@ void communities(graph* G) {
 #pragma omp parallel for schedule(guided, PAR_CHUNKSIZE)
 #elif defined(PARFOR_DYNAMIC)
 #pragma omp parallel for schedule(dynamic, PAR_CHUNKSIZE)
-#elif defined(TASKLOOP)
-#ifndef TASKLOOP_DEFINED
-  printError(TASKLOOP_NOTENABLED);
-  return
-#endif
+#elif defined(TASKLOOP_DEFINED)
 #pragma omp parallel taskloop
 #else
 #pragma omp parallel for schedule(static)
@@ -52,11 +50,7 @@ void communities(graph* G) {
 #pragma omp for schedule(guided, PAR_CHUNKSIZE)
 #elif defined(PARFOR_DYNAMIC)
 #pragma omp for schedule(dynamic, PAR_CHUNKSIZE)
-#elif defined(TASKLOOP)
-#ifndef TASKLOOP_DEFINED
-	printError(TASKLOOP_NOTENABLED);
-	return
-#endif
+#elif defined(TASKLOOP_DEFINED)
 #pragma omp taskloop
 #else
 #pragma omp  for schedule(static)
@@ -128,13 +122,14 @@ void output(graph *G) {
  **/
 int runalgo(int argc,char** argv) {
   if(argc < NO_OF_ARGS-1) {
-    const char argList[NO_OF_ARGS] = {" <inputfile> " };
+    const char* argList[NO_OF_ARGS] = {" <inputfile> " };
     printError(INCORRECT_ARG_LIST, NO_OF_ARGS, argList);
     return -1;
   }
   graph* G = parseGraph(argv[1]);
   comm = (node_t*) malloc (G->numNodes * sizeof(node_t));
   assert(comm != NULL);
+  return 0;
 }
 
 
@@ -146,6 +141,9 @@ int runalgo(int argc,char** argv) {
 
 
 
+inline void kernel(graph *G) {
+  communities(G);
+}
 
 
 
