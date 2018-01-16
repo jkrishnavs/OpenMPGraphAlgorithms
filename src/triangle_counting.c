@@ -8,7 +8,8 @@
 #include "mainFunctions.h"
 #include "parsegraph.h"
 #include "print.h"
-#include "powerandperformancetracking.h"
+#include "powerperformacetracking.h"
+
 
 #define NO_OF_ARGS 1
 int64_t T = 0 ;
@@ -20,7 +21,7 @@ void triangle_counting(graph *G) {
 #pragma omp parallel
   {
     int64_t T_private  = 0;
-
+    node_t v;
 #if defined(PARFOR_GUIDED)   
 #pragma omp for schedule(guided, PAR_CHUNKSIZE)
 #elif defined(PARFOR_DYNAMIC)
@@ -30,33 +31,31 @@ void triangle_counting(graph *G) {
 #else
 #pragma omp  for schedule(static)
 #endif
-      for (node_t v = 0; v < G.numNodes; v ++) 
-	for (edge_t u_idx = G.begin[v];u_idx < G.begin[v+1] ; u_idx ++) 
-	  {
-	    node_t u = G.node_idx [u_idx];
-	    if (u > v)
-	      {
-		for (edge_t w_idx = G.begin[v];w_idx < G.begin[v+1] ; w_idx ++) 
-		  {
-		    node_t w = G.node_idx [w_idx];
-		    if (w > u)
-		    {
-		      if (is_neighbour(G,w,u))
-			{
-			  T_private = T_private + 1 ;
-			}
-		    }
+    for (v = 0; v < G->numNodes; v ++) {
+      edge_t u_idx;
+	for (u_idx = G->begin[v]; u_idx < G->begin[v+1]; u_idx ++) {
+	  node_t u = G->node_idx [u_idx];
+	  if (u > v) {
+	    edge_t w_idx;
+	    for (w_idx = G->begin[v]; w_idx < G->begin[v+1]; w_idx ++) {
+	      node_t w = G->node_idx [w_idx];
+	      if (w > u) {
+		if (isNeighbour(G,w,u)) {
+		  T_private = T_private + 1 ;
 		}
 	      }
+	    }
 	  }
+	}
+    }
 #pragma omp atomic
-    T += T_private;
+      T += T_private;
   }
   endtracking();
 }
 
 void output(graph *G) {
-  printf("\nThe total number of Triangles = %ld\n", &T);
+  printf("\nThe total number of Triangles = %lld\n", T);
 }
 
 

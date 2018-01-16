@@ -8,13 +8,14 @@
 #include "mainFunctions.h"
 #include "parsegraph.h"
 #include "print.h"
-#include "powerandperformancetracking.h"
+#include "powerperformacetracking.h"
+#include <float.h>
 
 #define NO_OF_ARGS 1
 
-double __conduct = 0;
-int32_t *G_member;
+float __conduct = 0;
 
+int32_t *G_member;
 
 void conduct(graph *G) {
   inittracking();
@@ -40,7 +41,7 @@ void conduct(graph *G) {
 #pragma omp parallel for schedule(static)
 #endif
       for (node_t u = 0; u < G->numNodes; u ++) 
-	if ((G_member[u] == num))
+	if ((G_member[u] == i))
 	  {
 	    __S2_prv = __S2_prv + (G->begin[u+1] - G->begin[u]) ;
 	  }
@@ -63,7 +64,7 @@ void conduct(graph *G) {
 #pragma omp parallel for schedule(static)
 #endif
       for (node_t u0 = 0; u0 < G->numNodes; u0 ++) 
-	if ((G_member[u0] != num))
+	if ((G_member[u0] != i))
 	  {
 	    __S3_prv = __S3_prv + (G->begin[u0+1] - G->begin[u0]) ;
 	  }
@@ -89,12 +90,12 @@ void conduct(graph *G) {
 #pragma omp parallel for schedule(static)
 #endif
       for (node_t u1 = 0; u1 < G->numNodes; u1 ++) 
-	if ((G_member[u1] == num))
+	if ((G_member[u1] == i))
 	  {
-	    for (edge_t j_idx = G->begin[u1];j_idx < G.begin[u1+1] ; j_idx ++) 
+	    for (edge_t j_idx = G->begin[u1];j_idx < G->begin[u1+1] ; j_idx ++) 
 	      {
 		node_t j = G->node_idx [j_idx];
-	      if ((G_member[j] != num))
+	      if ((G_member[j] != i))
 		{
 		  __S4_prv = __S4_prv + 1 ;
 		}
@@ -106,10 +107,6 @@ void conduct(graph *G) {
     
     m = (float)((__S2 < __S3)?__S2:__S3) ;
   
-  if (m == 0)
-    C += (__S4 == 0)?((float)(0.000000)):FLT_MAX; 
-  else 
-    C += ((float)__S4) / m;
   }
   endtracking();
   
@@ -117,8 +114,7 @@ void conduct(graph *G) {
 
 
 void output(graph *G) {
-  printf("sum C = %lf\n", C);
-  return true;
+  printf("sum C = %lf\n", __conduct);
 }
 
 
@@ -133,13 +129,13 @@ int runalgo(int argc,char** argv) {
   }
   graph* G = parseGraph(argv[1]);
   G_member = (int32_t*) malloc (G->numNodes * sizeof(int32_t));
-
+  srand(0);
 #pragma parallel for 
-  for (int i = 0; i < G.numNodes; i++) 
+  for (int i = 0; i < G->numNodes; i++) 
     G_member[i] = 0;
   
-  for (int i = 0; i < G.numNodes; i++) {
-    int32_t r = xorshift_rng.rand() % 100;
+  for (int i = 0; i < G->numNodes; i++) {
+    int32_t r = rand() % 100;
     if (r < 10)
       G_member[i] = 0;  // 10%
     else if (r < (10 + 20))

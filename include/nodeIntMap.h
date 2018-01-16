@@ -28,60 +28,61 @@ typedef struct nodeIntMap {
    Update O(1)
  */
 
-void __initNodeIntMap(nodeIntMap& map, int initValue = 0) {
-  map.size = 0;
+void __initNodeIntMap(nodeIntMap* map, int initValue) {
+  map = (nodeIntMap*) malloc (sizeof(nodeIntMap));
+  map->size = 0;
   int i;
-  for(i=0; i< map.maxSize; i++) {
-    map.list[i].value = initValue;
+  for(i=0; i< map->maxSize; i++) {
+    map->list[i].value = initValue;
   }
 }
 
-void initNodeIntMap(nodeIntMap& map, int size, int initValue = 0) {
-  map.maxSize = size;
-  map.list = (nodeIntMapElement*) malloc (size * sizeof (nodeIntMapElement));
+void initNodeIntMap(nodeIntMap* map, int size, int initValue) {
+  map->maxSize = size;
+  map->list = (nodeIntMapElement*) malloc (size * sizeof (nodeIntMapElement));
   __initNodeIntMap(map,initValue);
 }
 
-void reinitNodeIntMap(nodeIntMap& map, int size, int initValue = 0) {
-  if(size > map.maxSize) {
-    map.maxSize = size;
-    map.list = (nodeIntMapElement*) relloc (size * sizeof (nodeIntMapElement));    
+void reinitNodeIntMap(nodeIntMap* map, int mapSize, int initValue) {
+  if(mapSize > map->maxSize) {
+    map->maxSize = mapSize;
+    map->list = (nodeIntMapElement*) realloc (map->list, mapSize * sizeof (nodeIntMapElement));    
   }
   __initNodeIntMap(map,initValue);
 }
 
 
 
-void closeNodeIntMap(nodeIntMap& map) {
-  free(map.list);
+void closeNodeIntMap(nodeIntMap* map) {
+  free(map->list);
 }
 
 
-node_t mapMaxValueKey(nodeIntMap& map) {
+node_t mapMaxValueKey(nodeIntMap* map) {
   int max = 0, i;
   node_t maxVal = NIL_NODE;
-  for(i=0;i<map.size;i++) {
-    if(max < map.list[i].value) {
-      maxVal = map.list[i].key;
-      max = map.list[i].value;
+  for(i=0;i<map->size;i++) {
+    if(max < map->list[i].value) {
+      maxVal = map->list[i].key;
+      max = map->list[i].value;
     }  
   }
   return maxVal;
 }
 
 
-void changeValue(nodeIntMap& map, node_t key, int inc) {
+void changeValue(nodeIntMap* map, node_t key, int inc) {
   int i;
-  for(i=0;i<map.size;i++) {
-    if(key == map.list[i].key) {
-      map.list[i].value += inc;
+  for(i=0;i<map->size;i++) {
+    if(key == map->list[i].key) {
+      map->list[i].value += inc;
       break;
     }  
   }
-  if(i == map.size ) {
-    map.list[i].key = key;
-    map.list[i].value = inc;
-    map.size++;
+  if(i == map->size ) {
+    map->list[i].key = key;
+    map->list[i].value = inc;
+    map->size++;
   }
 }
 
@@ -96,7 +97,7 @@ typedef struct nodeIntMapAtomic {
   int size;
 } nodeIntMapAtomic;
 
-void changeValueAtomicAddNodeIntMap(nodeIntMapAtomic& map, node_t key, int inc) {
+void changeValueAtomicAddNodeIntMap(nodeIntMapAtomic* map, node_t key, int inc) {
 #pragma omp critical
   {
     

@@ -9,11 +9,11 @@ if [ -z "$(gcc --version | head -n1 | cut -d" " -f4)"  ];
   then
 	echo "gcc version less than 6, Task loop might not work"
         echo "CCINST = gcc" > Makefile.in
-	echo "TASKLOOP_DEFINED= No" > Makefile.in
+	echo "TASKLOOP_DEFINED= No" >> Makefile.in
   else
       echo "GCC version is ","$(gcc --version | head -n1 | cut -d" " -f4)"
-          echo "CCINST = gcc" > Makefile.in
-      echo "TASKLOOP_DEFINED= yes" > Makefile.in
+      echo "CCINST = gcc" > Makefile.in
+      echo "TASKLOOP_DEFINED= yes" >> Makefile.in
 fi
 
 details=$(uname -a)
@@ -43,7 +43,7 @@ else
 	else
 	    startcore=${mybunch[0]}
 	    endcore=${mybunch[1]}
-	    while [ $startcore -lt $endcore ]
+	    while [ $startcore -le $endcore ]
 	    do
 		let "onlinecores=onlinecores + (1 << $startcore)"
 		let "startcore=startcore +1"

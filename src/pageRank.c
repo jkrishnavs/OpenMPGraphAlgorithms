@@ -8,14 +8,14 @@
 #include "mainFunctions.h"
 #include "parsegraph.h"
 #include "print.h"
-#include "powerandperformancetracking.h"
+#include "powerperformacetracking.h"
 
 #define NO_OF_ARGS 4
 
 double e;
 double d;
 int32_t maxIters;
-float* pg_rank;
+double* pg_rank;
 
 
 
@@ -27,7 +27,7 @@ void pageRank(graph* G) {
   int32_t cnt = 0 ;
   double N = 0.0 ;
   
-  double* pg_rank_nxt = gm_rt_allocate_double(G.num_nodes(),gm_rt_thread_id());
+  double* pg_rank_nxt = (double*) malloc (G->numNodes * sizeof(double));
 
   cnt = 0 ;
   N = G->numNodes;
@@ -64,7 +64,7 @@ void pageRank(graph* G) {
 	      for (edge_t w_idx = G->r_begin[t];w_idx < G->r_begin[t+1] ; w_idx ++) 
                 {
 		  node_t w = G->r_node_idx [w_idx];
-		  __S1 = __S1 + pg_rank[w] / ((double)((G->begin[w+1] - G.begin[w]))) ;
+		  __S1 = __S1 + pg_rank[w] / ((double)((G->begin[w+1] - G->begin[w]))) ;
                 }
 	      val = (1 - d) / N + d * __S1 ;
 	      diff_prv = diff_prv +  abs((val - pg_rank[t]))  ;
@@ -72,25 +72,26 @@ void pageRank(graph* G) {
             }
 #pragma omp atomic
 	diff += diff_prv;
-	#pragma omp for
-	for (node_t i3 = 0; i3 < G->numNodes; i3 ++) 
-	  pg_rank[i3] = pg_rank_nxt[i3] ;
+#pragma omp single
+	{
+	  double * temp = pg_rank_nxt;
+	  pg_rank_nxt  = pg_rank;
+	  pg_rank = temp;
+	}
       }
       cnt = cnt + 1 ;
-    } while ((diff > eprime) && (cnt < max));
+    } while ((diff > eprime) && (cnt < maxIters));
 
-
-    gm_rt_cleanup();
-    endtracking();
+  free(pg_rank_nxt);
+  endtracking();
 }
 
 
 void output(graph *G) {
-  for (int i = 0; i < 4; i++) {
+  for (int i = 0; i < 10 && i < G->numNodes; i++) {
     printf("rank[%d] = %0.9lf\n", i, pg_rank[i]);
   }
   free(pg_rank);
-  return true;
 }
 
 
@@ -100,7 +101,7 @@ void output(graph *G) {
 int runalgo(int argc,char** argv) {
   int flag = 0;
   /* Default values  */
-  max_iter = 100;
+  maxIters = 100;
   e = 0.001;
   d = 0.85;
   
@@ -127,7 +128,7 @@ int runalgo(int argc,char** argv) {
     printError(INCORRECT_ARG_LIST, NO_OF_ARGS, argList);
     return -1;
   }
-  pg_rank = (float*) malloc (G->numNodes * sizeof(float));
+  pg_rank = (double*) malloc (G->numNodes * sizeof(double));
   assert(pg_rank != NULL);
   return 0;
 }

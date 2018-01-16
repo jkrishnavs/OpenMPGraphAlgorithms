@@ -31,8 +31,10 @@ value_t numLinesfromCur(FILE *f) {
 
 void skipNlines(FILE* f, int n) {
   int counter  = 0;
+  int r = 0;
   while(!feof(f) && counter < n) {
-    fscanf(f,"%*[^\n]\n");
+    r = fscanf(f,"%*[^\n]\n");
+    assert(r!= EOF);
     counter++;
   }
 }
