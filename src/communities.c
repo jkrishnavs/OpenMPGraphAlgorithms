@@ -29,12 +29,17 @@ void communities(graph* G) {
 #elif defined(PARFOR_DYNAMIC)
 #pragma omp parallel for schedule(dynamic, PAR_CHUNKSIZE)
 #elif defined(TASKLOOP_DEFINED)
-#pragma omp parallel taskloop
+#pragma omp parallel
+  {
+#pragma omp taskloop num_tasks(NUM_TASKS)
 #else
 #pragma omp parallel for schedule(static)
 #endif
     for (node_t x = 0; x < G->numNodes; x ++) 
       comm[x] = x ;
+#if defined(TASKLOOP_DEFINED)
+  }
+#endif
   
   do
     {
@@ -52,7 +57,7 @@ void communities(graph* G) {
 #elif defined(PARFOR_DYNAMIC)
 #pragma omp for schedule(dynamic, PAR_CHUNKSIZE)
 #elif defined(TASKLOOP_DEFINED)
-#pragma omp taskloop num_tasks(PAR_CHUNKSIZE)
+#pragma omp taskloop num_tasks(NUM_TASKS)
 #else
 #pragma omp  for schedule(static)
 #endif

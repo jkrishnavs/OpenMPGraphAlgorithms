@@ -32,13 +32,13 @@ void conduct(graph *G) {
 
 
 #if defined(PARFOR_GUIDED)   
-#pragma omp parallel for schedule(guided, PAR_CHUNKSIZE)
+#pragma omp for schedule(guided, PAR_CHUNKSIZE)
 #elif defined(PARFOR_DYNAMIC)
-#pragma omp parallel for schedule(dynamic, PAR_CHUNKSIZE)
+#pragma omp for schedule(dynamic, PAR_CHUNKSIZE)
 #elif defined(TASKLOOP_DEFINED)
-#pragma omp parallel taskloop
+#pragma omp taskloop num_tasks(NUM_TASKS)
 #else
-#pragma omp parallel for schedule(static)
+#pragma omp for schedule(static)
 #endif
       for (node_t u = 0; u < G->numNodes; u ++) 
 	if ((G_member[u] == i))
@@ -55,13 +55,13 @@ void conduct(graph *G) {
       int32_t __S3_prv = 0 ;
       __S3_prv = 0 ;
 #if defined(PARFOR_GUIDED)   
-#pragma omp parallel for schedule(guided, PAR_CHUNKSIZE)
+#pragma omp for schedule(guided, PAR_CHUNKSIZE)
 #elif defined(PARFOR_DYNAMIC)
-#pragma omp parallel for schedule(dynamic, PAR_CHUNKSIZE)
+#pragma omp for schedule(dynamic, PAR_CHUNKSIZE)
 #elif defined(TASKLOOP_DEFINED)
-#pragma omp parallel taskloop
+#pragma omp taskloop num_tasks(NUM_TASKS)
 #else
-#pragma omp parallel for schedule(static)
+#pragma omp for schedule(static)
 #endif
       for (node_t u0 = 0; u0 < G->numNodes; u0 ++) 
 	if ((G_member[u0] != i))
@@ -69,8 +69,8 @@ void conduct(graph *G) {
 	    __S3_prv = __S3_prv + (G->begin[u0+1] - G->begin[u0]) ;
 	  }
 
-    #pragma omp atomic
-    __S3 += __S3_prv;
+#pragma omp atomic
+      __S3 += __S3_prv;
     }
     
 
@@ -81,13 +81,13 @@ void conduct(graph *G) {
       __S4_prv = 0 ;
 
 #if defined(PARFOR_GUIDED)   
-#pragma omp parallel for schedule(guided, PAR_CHUNKSIZE)
+#pragma omp for schedule(guided, PAR_CHUNKSIZE)
 #elif defined(PARFOR_DYNAMIC)
-#pragma omp parallel for schedule(dynamic, PAR_CHUNKSIZE)
+#pragma omp for schedule(dynamic, PAR_CHUNKSIZE)
 #elif defined(TASKLOOP_DEFINED)
-#pragma omp parallel taskloop
+#pragma omp taskloop num_tasks(NUM_TASKS)
 #else
-#pragma omp parallel for schedule(static)
+#pragma omp for schedule(static)
 #endif
       for (node_t u1 = 0; u1 < G->numNodes; u1 ++) 
 	if ((G_member[u1] == i))

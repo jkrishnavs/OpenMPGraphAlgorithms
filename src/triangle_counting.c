@@ -27,26 +27,26 @@ void triangle_counting(graph *G) {
 #elif defined(PARFOR_DYNAMIC)
 #pragma omp for schedule(dynamic, PAR_CHUNKSIZE)
 #elif defined(TASKLOOP_DEFINED)
-#pragma omp taskloop
+#pragma omp taskloop num_tasks(NUM_TASKS)
 #else
 #pragma omp  for schedule(static)
 #endif
     for (v = 0; v < G->numNodes; v ++) {
       edge_t u_idx;
-	for (u_idx = G->begin[v]; u_idx < G->begin[v+1]; u_idx ++) {
-	  node_t u = G->node_idx [u_idx];
-	  if (u > v) {
-	    edge_t w_idx;
-	    for (w_idx = G->begin[v]; w_idx < G->begin[v+1]; w_idx ++) {
-	      node_t w = G->node_idx [w_idx];
-	      if (w > u) {
-		if (isNeighbour(G,w,u)) {
-		  T_private = T_private + 1 ;
-		}
+      for (u_idx = G->begin[v]; u_idx < G->begin[v+1]; u_idx ++) {
+	node_t u = G->node_idx [u_idx];
+	if (u > v) {
+	  edge_t w_idx;
+	  for (w_idx = G->begin[v]; w_idx < G->begin[v+1]; w_idx ++) {
+	    node_t w = G->node_idx [w_idx];
+	    if (w > u) {
+	      if (isNeighbour(G,w,u)) {
+		T_private = T_private + 1 ;
 	      }
 	    }
 	  }
 	}
+      }
     }
 #pragma omp atomic
       T += T_private;

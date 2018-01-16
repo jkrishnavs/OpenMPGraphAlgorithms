@@ -51,7 +51,7 @@ void pageRank(graph* G) {
 #elif defined(PARFOR_DYNAMIC)
 #pragma omp for schedule(dynamic, PAR_CHUNKSIZE)
 #elif defined(TASKLOOP_DEFINED)
-#pragma omp taskloop
+#pragma omp taskloop num_tasks(NUM_TASKS)
 #else
 #pragma omp  for schedule(static)
 #endif
