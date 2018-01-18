@@ -127,45 +127,52 @@ void createReverseEdges(graph* G) {
     
   G->r_node_idx = (node_t*) malloc ((edges)* sizeof(node_t));
   assert(G->r_node_idx != NULL);
-  edge_t* loc = (edge_t*) malloc ((nodes)* sizeof(edge_t));
-  assert(loc != NULL);
-  // initialize
   
+  /* edge_t* loc = (edge_t*) malloc ((nodes)* sizeof(edge_t)); */
+  /* assert(loc != NULL); */
+  // initialize
+
+  node_t* relLoc = (node_t*) malloc ((nodes)* sizeof(node_t));
+
+  node_t i;
 #pragma omp parallel for
-  for (node_t i = 0; i < nodes; i++) {
+  for (i = 0; i < nodes; i++) {
     G->r_begin[i] = 0;
+    relLoc[i] = 0;
   }
-
-
+  
 #pragma omp parallel for schedule(dynamic,128)
-  for (node_t i = 0; i < nodes; i++) {
+  for (i = 0; i < nodes; i++) {
     for (edge_t e = G->begin[i]; e < G->begin[i + 1]; e++) {
       node_t dest = G->node_idx[e];
-      edge_t location;
-      #pragma omp atomic capture
-       location = G->r_begin[dest]++;
-      loc[e] = location;	
+      #pragma omp atomic
+      G->r_begin[dest]++;
     }
   }
+  
 #if !USE_PARALLEL_PREFIXSUM
-  edge_t sum = 0;
-  for (node_t i = 0; i < nodes; i++) {
-    edge_t sum_old = sum;
-    sum = sum + G->r_begin[i];
-    G->r_begin[i] = sum_old;
+  for (i = 0; i <= nodes; i++) {
+    G->r_begin[i] += G->r_begin[i-1];
   }
-  G->r_begin[nodes] = sum;
 #else
   // TODO
 #endif
+
+
   
+  /* Our Experiments show that atleast for a smaller 
+     number of hardware threads a sequential algorithm 
+     is efficient in creating the reverse edges (no synchronization costs). 
+     The reverse edges created using sequential set will
+     be inadvertantly sorted. */
+
+
   
-    // now update destination
-#pragma omp parallel for schedule(dynamic,128)
-  for (node_t i = 0; i < nodes; i++) {
-    for (edge_t e = G->begin[i]; e < G->begin[i + 1]; e++) {
+  for (i = 0; i < nodes; i++) {
+    edge_t e;
+    for (e = G->begin[i]; e < G->begin[i + 1]; e++) {
       node_t dest = G->node_idx[e];
-      edge_t r_edge_idx = G->r_begin[dest] + loc[e];
+      edge_t r_edge_idx = G->r_begin[dest]+ (relLoc[dest]++);
       G->r_node_idx[r_edge_idx] = i;
     }
   }
@@ -173,10 +180,10 @@ void createReverseEdges(graph* G) {
   
   
   G->reverseEdge = true;  
-  if (G->semiSorted) semisortReverse(G);
-  if (G->node_idx_src != NULL) prepareEdgeSourceReverse(G);
+  // if (G->semiSorted) semisortReverse(G);
+  // if (G->node_idx_src != NULL) prepareEdgeSourceReverse(G);
 
-  free(loc);     
+  free(relLoc);     
 }
 
 
