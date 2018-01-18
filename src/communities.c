@@ -6,7 +6,6 @@
 
 #include "graph.h"
 #include "mainFunctions.h"
-#include "parsegraph.h"
 #include "print.h"
 #include "powerperformacetracking.h"
 #include "nodeIntMap.h"
@@ -50,7 +49,7 @@ void communities(graph* G) {
       {
 	nodeIntMap *map;
 	map = NULL;
-	initNodeIntMap(map, 32, 0);
+	map = initNodeIntMap(map, 32, 0);
 	node_t x0;
 #if defined(PARFOR_GUIDED)   
 #pragma omp for schedule(guided, PAR_CHUNKSIZE)
@@ -61,20 +60,20 @@ void communities(graph* G) {
 #else
 #pragma omp  for schedule(static)
 #endif
-	  for (x0 = 0; x0 < G->numNodes; x0 ++) {
-	    reinitNodeIntMap(map, G->begin[x0+1] - G->begin[x0], 0);
-	    for (edge_t y_idx = G->begin[x0];y_idx < G->begin[x0+1] ; y_idx ++) {
-	      node_t y = G->node_idx [y_idx];
-	      node_t source;
-	      source = comm[y] ;
-	      changeValue(map, source, 1);
-	    }
-	    node_t maxVal = mapMaxValueKey(map); 
-	    if ( comm[x0] != maxVal) {
-	      comm[x0] = maxVal;
-	      finished = false ;
-	    }
+	for (x0 = 0; x0 < G->numNodes; x0 ++) {
+	  map = reinitNodeIntMap(map, G->begin[x0+1] - G->begin[x0], 0);
+	  for (edge_t y_idx = G->begin[x0];y_idx < G->begin[x0+1] ; y_idx ++) {
+	    node_t y = G->node_idx [y_idx];
+	    node_t source;
+	    source = comm[y] ;
+	    changeValue(map, source, 1);
 	  }
+	  node_t maxVal = mapMaxValueKey(map); 
+	  if ( comm[x0] != maxVal) {
+	    comm[x0] = maxVal;
+	    finished = false ;
+	  }
+	}
 	closeNodeIntMap(map);
       }
     } while ( !finished);
@@ -131,9 +130,11 @@ int runalgo(int argc,char** argv) {
     printError(INCORRECT_ARG_LIST, NO_OF_ARGS, argList);
     return -1;
   }
-  graph* G = parseGraph(argv[1]);
+  graph* G = readGraph(argv[1]);
   comm = (node_t*) malloc (G->numNodes * sizeof(node_t));
   assert(comm != NULL);
+  runKernel(G);
+  output(G);
   return 0;
 }
 

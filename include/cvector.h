@@ -16,12 +16,13 @@ typedef struct vector{
 } vector;
 
 
-void initVector(vector *v, graphDataType t) {
+vector* initVector(vector *v, graphDataType t) {
   v = (vector*) malloc (sizeof(vector));
   v->arr = NULL;
   v->capacity = 0;
   v->size = 0;
   v->type = t;
+  return v;
 }
   
 inline void clearVector(vector *v) {
@@ -37,7 +38,7 @@ inline value_t vectorSize(vector *v) {
 }
 
 void vectorReserve(vector *v, size_t t) {
-  if(v->capacity < (value_t)t)
+  if((value_t)t < v->capacity)
     return;
   if(v->arr == NULL) {
     v->arr = (value_t*) malloc(sizeof(value_t) * t);

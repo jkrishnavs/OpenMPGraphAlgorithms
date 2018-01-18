@@ -54,14 +54,21 @@ void semisort(graph *G) {
   }
 
   semisortMain(G->numNodes, G->numEdges, G->begin, G->node_idx, G->e_idx2idx, G->e_idx2idx);
-  
-#pragma omp parallel for
-  for (edge_t j = 0; j < G->numEdges; j++) {
-    edge_t id = G->e_idx2idx[j];
-    G->e_idx2idx[id] = j;
-  }
-  
 
+  /* TODO uncomment this region 
+   if we require e_ixd2idx later
+  */
+/* #pragma omp parallel for */
+/*   for (edge_t j = 0; j < G->numEdges; j++) { */
+/*     edge_t id = G->e_idx2idx[j]; */
+/*     G->e_idx2idx[id] = j; */
+/*   } */
+
+  /* TODO: .. and comment this */
+  free(G->e_idx2idx);
+  G->e_idx2idx = NULL;
+
+  
   if (G->reverseEdge) {
     semisortReverse(G);
   }
@@ -74,7 +81,32 @@ void semisort(graph *G) {
  */
 void semisortReverse(graph *G) {
   assert(G->semiSorted == true);
+
+  if(G->e_revidx2idx == NULL) {
+    G->e_revidx2idx = (edge_t*) malloc(sizeof(edge_t)* G->numEdges);
+    assert(G->e_revidx2idx != NULL);
+#pragma omp parallel for schedule(dynamic,128)
+    for (node_t i = 0; i < G->numNodes; i++) {
+      for (edge_t j = G->r_begin[i]; j < G->r_begin[i + 1]; j++) {
+	G->e_revidx2idx[j] = j;    
+      }
+    }
+  }
+  
   semisortMain(G->numNodes, G->numEdges, G->r_begin, G->r_node_idx, G->e_revidx2idx, NULL);
+  /* TODO : If we are using  e_revidx2idx uncomment the following region*/
+
+/* #pragma omp parallel for schedule(dynamic,128) */
+/*   for (node_t i = 0; i < G->numNodes; i++) { */
+/*     for (edge_t j = G->r_begin[i]; j < G->r_begin[i + 1]; j++) { */
+/*       G->e_revidx2idx[j] = j;     */
+/*     } */
+/*   } */
+
+  /* TODO: .. and comment this region */
+  free(G->e_revidx2idx);
+  G->e_revidx2idx = NULL;
+  
 }
 
 
@@ -212,13 +244,13 @@ void semisortMain(node_t N, edge_t M, edge_t* begin, node_t* dest, edge_t* aux, 
   {
     
     vector* index = NULL;
-    initVector(index, NODE_T);
+    index = initVector(index, NODE_T);
     vector* destCopy = NULL;
-    initVector(destCopy, NODE_T);
+    destCopy = initVector(destCopy, NODE_T);
     vector* auxCopy = NULL;
-    initVector(auxCopy, EDGE_T);
+    auxCopy = initVector(auxCopy, EDGE_T);
     vector* aux2Copy = NULL;
-    initVector(aux2Copy, EDGE_T); 
+    aux2Copy = initVector(aux2Copy, EDGE_T); 
 
 #pragma omp for schedule(dynamic,4096) nowait
     for (node_t i = 0; i < N; i++) {
@@ -241,7 +273,7 @@ void semisortMain(node_t N, edge_t M, edge_t* begin, node_t* dest, edge_t* aux, 
       for(edge_t j=0;j < sz; j++) {
 	setVectorData(index, j,j);
 	setVectorData(destCopy, j, destLocal[j]);
-	setVectorData(auxCopy, j, auxLocal[j]);
+	setVectorData(auxCopy, j, auxLocal[j]); /*  */
 	if (aux2 != NULL)
 	  setVectorData(aux2Copy, j, aux2Local[j]);
       }

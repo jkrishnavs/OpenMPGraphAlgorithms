@@ -6,7 +6,6 @@
 
 #include "graph.h"
 #include "mainFunctions.h"
-#include "parsegraph.h"
 #include "print.h"
 #include "powerperformacetracking.h"
 #include <float.h>
@@ -127,7 +126,7 @@ int runalgo(int argc,char** argv) {
     printError(INCORRECT_ARG_LIST, NO_OF_ARGS, argList);
     return -1;
   }
-  graph* G = parseGraph(argv[1]);
+  graph* G = readGraph(argv[1]);
   G_member = (int32_t*) malloc (G->numNodes * sizeof(int32_t));
   srand(0);
 #pragma parallel for 
@@ -145,6 +144,8 @@ int runalgo(int argc,char** argv) {
     else
       G_member[i] = 3;  // 40%
   }
+  runKernel(G);
+  output(G);
   return 0;
 }
 

@@ -6,7 +6,6 @@
 
 #include "graph.h"
 #include "mainFunctions.h"
-#include "parsegraph.h"
 #include "powerperformacetracking.h"
 #include "print.h"
 #include <stdlib.h>
@@ -122,7 +121,7 @@ int runalgo(int argc,char** argv) {
     printError(INCORRECT_ARG_LIST, NO_OF_ARGS, argList);
     return -1;
   }
-  graph* G = parseGraph(argv[1]);
+  graph* G = readGraph(argv[1]);
   len = (uint32_t*) malloc (G->numEdges * sizeof(uint32_t));
   /*
     Random generation of edge lengths
@@ -135,6 +134,7 @@ int runalgo(int argc,char** argv) {
   dist = (uint32_t*) malloc (G->numNodes * sizeof (uint32_t));
   assert(dist != NULL);
   runKernel(G);
+  output(G);
   return 0;
 }
 

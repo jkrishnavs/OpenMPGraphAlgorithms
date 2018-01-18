@@ -6,7 +6,6 @@
 
 #include "graph.h"
 #include "mainFunctions.h"
-#include "parsegraph.h"
 #include "print.h"
 #include "powerperformacetracking.h"
 
@@ -119,17 +118,25 @@ int runalgo(int argc,char** argv) {
     d = atof(argv[3]);
     if(d <= 0) flag = 3;
   }
-  graph* G = parseGraph(argv[1]);
-  if(G == NULL)
-    flag = 4;
-  
-  if(flag > 0) {
+
+
+  if(flag == 0) {
     const char* argList[NO_OF_ARGS] = {" <inputfile>", "[max_iteration=100]", "[eplision=0.001]", "[delta=0.85]" };
     printError(INCORRECT_ARG_LIST, NO_OF_ARGS, argList);
     return -1;
   }
+
+  
+  
+  graph* G = readGraph(argv[1]);
+  if(G == NULL)
+    flag = 4;
+  
   pg_rank = (double*) malloc (G->numNodes * sizeof(double));
   assert(pg_rank != NULL);
+  createReverseEdge(G);
+  runKernel(G);
+  output(G);
   return 0;
 }
 

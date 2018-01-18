@@ -29,7 +29,6 @@ typedef struct nodeIntMap {
  */
 
 void __initNodeIntMap(nodeIntMap* map, int initValue) {
-  map = (nodeIntMap*) malloc (sizeof(nodeIntMap));
   map->size = 0;
   int i;
   for(i=0; i< map->maxSize; i++) {
@@ -37,18 +36,23 @@ void __initNodeIntMap(nodeIntMap* map, int initValue) {
   }
 }
 
-void initNodeIntMap(nodeIntMap* map, int size, int initValue) {
+nodeIntMap* initNodeIntMap(nodeIntMap* map, int size, int initValue) {
+  map = (nodeIntMap*) malloc (sizeof(nodeIntMap));
   map->maxSize = size;
   map->list = (nodeIntMapElement*) malloc (size * sizeof (nodeIntMapElement));
   __initNodeIntMap(map,initValue);
+  return map;
 }
 
-void reinitNodeIntMap(nodeIntMap* map, int mapSize, int initValue) {
+nodeIntMap* reinitNodeIntMap(nodeIntMap* map, int mapSize, int initValue) {
+  
   if(mapSize > map->maxSize) {
     map->maxSize = mapSize;
     map->list = (nodeIntMapElement*) realloc (map->list, mapSize * sizeof (nodeIntMapElement));    
   }
   __initNodeIntMap(map,initValue);
+
+  return map;
 }
 
 
