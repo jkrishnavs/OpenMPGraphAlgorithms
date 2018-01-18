@@ -135,23 +135,23 @@ void createReverseEdges(graph* G) {
   node_t* relLoc = (node_t*) malloc ((nodes)* sizeof(node_t));
 
   node_t i;
-#pragma omp parallel for
+#pragma omp parallel for private(i)
   for (i = 0; i < nodes; i++) {
     G->r_begin[i] = 0;
     relLoc[i] = 0;
   }
   
-#pragma omp parallel for schedule(dynamic,128)
+#pragma omp parallel for schedule(dynamic,128) private(i)
   for (i = 0; i < nodes; i++) {
     for (edge_t e = G->begin[i]; e < G->begin[i + 1]; e++) {
       node_t dest = G->node_idx[e];
-      #pragma omp atomic
+#pragma omp atomic
       G->r_begin[dest]++;
     }
   }
   
 #if !USE_PARALLEL_PREFIXSUM
-  for (i = 0; i <= nodes; i++) {
+  for (i = 1; i <= nodes; i++) {
     G->r_begin[i] += G->r_begin[i-1];
   }
 #else
