@@ -52,10 +52,10 @@ void sssp(graph *G) {
     // updatedDist[t0] = (t0 == root)?0:UINT_MAX ;
   }
   
-  
-  while (fin == false) {
-    bool __E8 = false ;      
-
+  bool __E8 = true;        
+  while (__E8 == true) {
+    __E8 = false;
+     
 #if defined(PARFOR_GUIDED)   
 #pragma omp for schedule(guided, PAR_CHUNKSIZE)
 #elif defined(PARFOR_DYNAMIC)
@@ -66,7 +66,7 @@ void sssp(graph *G) {
 #pragma omp  for schedule(static)
 #endif
     for (node_t n = 0; n < G->numNodes; n ++) {
-      if (updated[n]) {
+      if (updated[n] == true) {
 	for (edge_t s_idx = G->begin[n];s_idx < G->begin[n+1] ; s_idx ++) {
 	  node_t s = G->node_idx [s_idx];
 	  edge_t e;
@@ -78,11 +78,11 @@ void sssp(graph *G) {
 	      updatedNext[s]  = true;
 	      dist[s] = newDist;
 	    }
-
 #pragma omp atomic
 	    __E8 |= true;
 	  }
 	}
+	updated[n] = false;
       }
     }
     bool *temp = updated;
