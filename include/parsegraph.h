@@ -83,7 +83,7 @@ graph* parseGraph(const char* filename) {
     if(isnumber == 0) {
       /***
 	  TODO: We need to revist this.
-	  Now we assume all inpt nodes contains 0 to N-1 nodes.
+	  Now we assume all input nodes contains 0 to N-1 nodes.
        **/
       assert(x == counter);
       counter++;
@@ -111,6 +111,11 @@ graph* parseGraph(const char* filename) {
   node_t curSource = 0;
   G->begin[curSource] = 0;
   r = 1;
+
+  /**
+   * TODO: we assume that all edges are ordered.
+   **/
+  
   while(r != EOF) {   
     r = fscanf(f, "%d %d", &x, &y);
     G->node_idx[edgeid] = y;

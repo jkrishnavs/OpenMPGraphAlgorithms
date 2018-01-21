@@ -98,7 +98,7 @@ void output(graph *G) {
 
   int counter  = 0;
   
-  printf(" * The shortest path to the following nodes from the root Nod %d\n", root);
+  printf("The shortest path to the following nodes from the root Node %d\n", root);
   for (node_t n = 0; n < G->numNodes && counter < 5; n++) {
     if(dist[n] != UINT_MAX && n != root) {
       printf(" %d -> %d : %ud \n", root, n, dist[n]);
@@ -116,11 +116,35 @@ int runalgo(int argc,char** argv) {
   long seed  = 0;
   uint32_t maxLength = 10;
   root = 0;
-  if(argc < NO_OF_ARGS-1) {
-    const char* argList[NO_OF_ARGS] = {" <inputfile> " , "[root = 0]", "[maxLength=10]","[seed = 0]"};
+
+  int flag = 0;
+
+
+  if(argc > 2) {
+    root  = atoi(argv[2]);
+    if(root < 0) flag = 1;
+  }
+
+  if(argc > 3) {
+    maxLength = atoi(argv[3]);
+    if(maxLength < 1) flag = 2;
+  }
+
+  if(argc > 4) {
+    seed = atoi(argv[4]);
+    if(seed < 0) flag = 3;
+  }
+  
+
+  
+  if(flag != 0) {
+    const char* argList[NO_OF_ARGS] = {" <inputfile> " , "[root = 0]", "maxLength=10]","[seed = 0]"};
     printError(INCORRECT_ARG_LIST, NO_OF_ARGS, argList);
     return -1;
   }
+
+  
+  
   graph* G = readGraph(argv[1]);
   len = (uint32_t*) malloc (G->numEdges * sizeof(uint32_t));
   /*

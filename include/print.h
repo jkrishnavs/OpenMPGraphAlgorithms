@@ -52,7 +52,7 @@ void printError(errorCodes code, int NoOfMsgs,const char** msgs) {
     printf("Error: Element accessed beyond array Size. \n");
     break;
   case INCORRECT_ARG_LIST:
-    printf("Error: WOrng Usage of Arguments: \n Usage: EXECUTABLE");
+    printf("Error: Wrong Usage of Arguments: \n Usage: EXECUTABLE");
     int i;
     for(i=0; i< NoOfMsgs;i++) {
       printf("\t%s", msgs[i]);

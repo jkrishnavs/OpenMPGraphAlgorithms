@@ -10,10 +10,12 @@
 #include "powerperformacetracking.h"
 #include "nodeIntMap.h"
 
-#define NO_OF_ARGS 1
+#define NO_OF_ARGS 2
 
 
 node_t* comm = NULL;
+
+int maxItrs;
 
 
 
@@ -39,6 +41,8 @@ void communities(graph* G) {
 #if defined(TASKLOOP_DEFINED)
   }
 #endif
+
+  int itrs = 0;
   
   do
     {
@@ -76,7 +80,8 @@ void communities(graph* G) {
 	}
 	closeNodeIntMap(map);
       }
-    } while ( !finished);
+      itrs++;
+    } while ( !finished && maxItrs > itrs);
   
   
   endtracking();
@@ -125,12 +130,26 @@ void output(graph *G) {
  * Common entry point for all algorithms,
  **/
 int runalgo(int argc,char** argv) {
-  if(argc < NO_OF_ARGS-1) {
-    const char* argList[NO_OF_ARGS] = {" <inputfile> " };
+  int flag = 0;
+  maxItrs = 10;
+
+  if(argc > 2) {
+    maxItrs = atoi(argv[2]);
+    if(maxItrs <=0) flag = 1;
+  }
+
+  graph* G = readGraph(argv[1]);
+
+  if(G == NULL) {
+    flag = 2;
+  }
+  
+  if(flag != 0 ) {
+    const char* argList[NO_OF_ARGS] = {" <inputfile> " , "[max_iterations = 10]"};
     printError(INCORRECT_ARG_LIST, NO_OF_ARGS, argList);
     return -1;
   }
-  graph* G = readGraph(argv[1]);
+  
   comm = (node_t*) malloc (G->numNodes * sizeof(node_t));
   assert(comm != NULL);
   runKernel(G);

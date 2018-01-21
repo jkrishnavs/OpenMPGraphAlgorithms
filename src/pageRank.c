@@ -104,23 +104,23 @@ int runalgo(int argc,char** argv) {
   e = 0.001;
   d = 0.85;
   
-  if(argc > 1) {
-    maxIters = atoi(argv[1]);
+  if(argc > 2) {
+    maxIters = atoi(argv[2]);
     if(maxIters <=0) flag = 1;
   }
   
-  if(argc > 2) {
-    e = atof(argv[2]);
+  if(argc > 3) {
+    e = atof(argv[3]);
     if(e <= 0) flag = 2;
   }
 
-  if(argc > 3) {
-    d = atof(argv[3]);
+  if(argc > 4) {
+    d = atof(argv[4]);
     if(d <= 0) flag = 3;
   }
 
 
-  if(flag == 0) {
+  if(flag != 0) {
     const char* argList[NO_OF_ARGS] = {" <inputfile>", "[max_iteration=100]", "[eplision=0.001]", "[delta=0.85]" };
     printError(INCORRECT_ARG_LIST, NO_OF_ARGS, argList);
     return -1;
