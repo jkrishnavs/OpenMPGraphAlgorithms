@@ -108,7 +108,7 @@ bool hasEdgeTo(graph *G, node_t src, node_t dest) {
   }
   return hasEdge;
 }
-edge_t get_edge_idx_for_src_dest(node_t src, node_t dest) {
+edge_t get_edge_idx_for_src_dest(graph *G, node_t src, node_t dest) {
   edge_t edge = NIL_EDGE;
   for(edge_t s = G->begin[src]; s < G->begin[src+1]; s++) {
     node_t y = G->node_idx[s];
