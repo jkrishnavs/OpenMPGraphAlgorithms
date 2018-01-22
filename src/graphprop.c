@@ -57,6 +57,8 @@ void avgEdgeDistance(graph *G) {
   for(v = 0; v < G->numNodes; v ++) {
     aed += ((double)edgeDistances[v])/G->numEdges;
   }
+  // Scaling 
+  aed = aed/ G->numNodes;
   
   free(edgeDistances);
 }
