@@ -57,3 +57,4 @@ echo "ONLINECORESFLAG = -D ONLINECORES=$onlinecores" >> Makefile.in
 # Change the default chunk size here
 echo "CHUNKSIZE = 1024" >> Makefile.in
 echo "NUMTASKS = 1024" >> Makefile.in
+echo "NUM_LOCKS = 1024" >> Makefile.in

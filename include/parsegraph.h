@@ -42,7 +42,7 @@ void skipNlines(FILE* f, int n) {
 
 
 void writeBackGraph(graph *G, const char* filename) {
-  // TODO
+  /* TODO if requied */
 }
 
 
@@ -57,7 +57,7 @@ graph* parseGraph(const char* filename) {
 
   
   /**
-     TODO
+     TODO if required.
    We assume the edge file format to be listing all 
    nodes initially in format (one in each line).
    nodeid *
@@ -82,7 +82,8 @@ graph* parseGraph(const char* filename) {
     isnumber = isNumber(str);
     if(isnumber == 0) {
       /***
-	  TODO: We need to revist this.
+	  TODO: if required 
+	  We need to revisit this if assert fails.
 	  Now we assume all input nodes contains 0 to N-1 nodes.
        **/
       assert(x == counter);
@@ -110,8 +111,10 @@ graph* parseGraph(const char* filename) {
   r = 1;
 
   /**
-   * TODO: we assume that all edges are ordered.
-   **/
+   * TODO if required: 
+   * We currently assume that all edges are ordered.
+   * assert (curSource < x) will fail.
+   **/ 
 
   edge_t edgeid = 0;
   node_t y;
@@ -126,7 +129,7 @@ graph* parseGraph(const char* filename) {
       // format check
       if(x != curSource) {
 	assert(curSource < x);
-	while(x != curSource) {
+ 	while(x != curSource) {
 	  curSource++;
 	  G->begin[curSource] = edgeid;
 	}

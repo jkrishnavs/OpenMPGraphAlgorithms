@@ -94,7 +94,7 @@ void changeValue(nodeIntMap* map, node_t key, int inc) {
 
 
 #ifdef ATOMICMAP
-/* TODO  */
+/* TODO  if required */
 typedef struct nodeIntMapAtomic {
   nodeIntMapElement* list;
   int maxSize;

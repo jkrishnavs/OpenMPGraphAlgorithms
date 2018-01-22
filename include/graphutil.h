@@ -55,7 +55,8 @@ void semisort(graph *G) {
 
   semisortMain(G->numNodes, G->numEdges, G->begin, G->node_idx, G->e_idx2idx, G->e_idx2idx);
 
-  /* TODO uncomment this region 
+  /* TODO  if required.
+     uncomment this region 
    if we require e_ixd2idx later
   */
 /* #pragma omp parallel for */
@@ -64,7 +65,8 @@ void semisort(graph *G) {
 /*     G->e_idx2idx[id] = j; */
 /*   } */
 
-  /* TODO: .. and comment this */
+  /* TODO if required
+     : .. and comment this */
   free(G->e_idx2idx);
   G->e_idx2idx = NULL;
 
@@ -94,7 +96,8 @@ void semisortReverse(graph *G) {
   }
   
   semisortMain(G->numNodes, G->numEdges, G->r_begin, G->r_node_idx, G->e_revidx2idx, NULL);
-  /* TODO : If we are using  e_revidx2idx uncomment the following region*/
+  /* TODO  if required 
+     : If we are using  e_revidx2idx uncomment the following region*/
 
 /* #pragma omp parallel for schedule(dynamic,128) */
 /*   for (node_t i = 0; i < G->numNodes; i++) { */
@@ -103,7 +106,7 @@ void semisortReverse(graph *G) {
 /*     } */
 /*   } */
 
-  /* TODO: .. and comment this region */
+  /* TODO if required : .. and comment this region */
   free(G->e_revidx2idx);
   G->e_revidx2idx = NULL;
   
@@ -149,15 +152,6 @@ void createReverseEdges(graph* G) {
       G->r_begin[dest]++;
     }
   }
-  
-#if !USE_PARALLEL_PREFIXSUM
-  for (i = 1; i <= nodes; i++) {
-    G->r_begin[i] += G->r_begin[i-1];
-  }
-#else
-  // TODO
-#endif
-
 
   
   /* Our Experiments show that atleast for a smaller 
@@ -165,6 +159,13 @@ void createReverseEdges(graph* G) {
      is efficient in creating the reverse edges (no synchronization costs). 
      The reverse edges created using sequential set will
      be inadvertantly sorted. */
+
+
+  
+  for (i = 1; i <= nodes; i++) {
+    G->r_begin[i] += G->r_begin[i-1];
+  }
+
 
 
   
@@ -230,7 +231,8 @@ void prepareEdgeSourceReverse(graph *G) {
 void freezeGraph(graph * G) {
   if(G->frozen == true) return;  
   /***
-   * TODO :We are not handling flexible graphs for time being.
+   * TODO if required
+   * :We are not handling flexible graphs for time being.
    **/
   
   G->frozen = true;

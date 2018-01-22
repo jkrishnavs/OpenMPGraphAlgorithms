@@ -53,7 +53,6 @@ int main(int argc, char** args) {
 void runKernel(graph* G) {
  struct timeval start, end;
   gettimeofday(&start, NULL);
-  // TODO Call Function.
   kernel(G);
   gettimeofday(&end, NULL);
   printTiming(ALGO_KERNEL,((end.tv_sec - start.tv_sec)*1000 + ((double)(end.tv_usec - start.tv_usec))/1000));

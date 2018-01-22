@@ -120,7 +120,7 @@ void avgClusterCoeff(graph *G) {
 
 
 void diameter(graph *G) {
-  //TODO
+  //TODO if required
 }
 
 double sparsityMeasure;
@@ -132,9 +132,17 @@ void sparsity(graph *G) {
 double sccindex;
 
 void sccIndex(graph *G) {
-  sccindex = 0;
-  /* Sigma(scc(n))/ Multiplication of(scc(n))  */
-  // TODO
+
+  double* scclist = (double*) malloc (sizeof(double) * G->numNodes);
+  int* visited  = (int*) malloc (sizeof(int) * G->numNodes);
+  int* stack = (int*) malloc(sizeof(int) * G->numNodes);
+  memset(visited, 0, G->numNodes*sizeof(int));
+  
+  createReverseEdge(G);
+
+  free(stack);
+  free(scclist);
+  free(visited);
 }
 
 
@@ -181,8 +189,7 @@ void output(graph *G) {
   printf("\nAvg ClusterCoeff = %f \n",clusterCoeff);
   printf("Avg Edge Distance = %f \n", aed);
   printf("Sparsity = %f \n",sparsityMeasure);
-  printf("The total number of Triangles = %ld\n", T);
-
+  printf("The total number of Triangles = %ld\n\n", T);
 }
 
 
