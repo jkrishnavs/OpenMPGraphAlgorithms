@@ -91,11 +91,12 @@ graph* parseGraph(const char* filename) {
   }
   G->numNodes = counter;
 
-  G->begin = (edge_t*) malloc (sizeof(edge_t) * counter);
+  G->begin = (edge_t*) malloc (sizeof(edge_t) * (G->numNodes+1));
   assert(G->begin != NULL);
   /**get the number of edges **/
-  G->numEdges = (edge_t) numLinesfromCur(f) + 1;
-
+  G->numEdges = (edge_t) numLinesfromCur(f);
+  printf("The number of Nodes is %d\n", G->numNodes);
+  printf("The number of Edges is %d\n", G->numEdges);
 
   fseek(f,0,SEEK_SET); // rewind
   skipNlines(f, counter);  
@@ -106,29 +107,42 @@ graph* parseGraph(const char* filename) {
   assert(G->node_idx != NULL);
 
 
-  edge_t edgeid = 0;
-  node_t y;
-  node_t curSource = 0;
-  G->begin[curSource] = 0;
   r = 1;
 
   /**
    * TODO: we assume that all edges are ordered.
    **/
-  
+
+  edge_t edgeid = 0;
+  node_t y;
+  node_t curSource = 0;
+  G->begin[curSource] = 0;
+ 
   while(r != EOF) {   
     r = fscanf(f, "%d %d", &x, &y);
-    G->node_idx[edgeid] = y;
-    // format check
-    if(x != curSource) {
-      assert(curSource < x);
-      while(x != curSource) {
-	curSource++;
-	G->begin[curSource] = edgeid;
+    if(r != EOF) {
+      printf("The edge id is %d from %d to %d \n",edgeid,x,y);
+      G->node_idx[edgeid] = y;
+      // format check
+      if(x != curSource) {
+	assert(curSource < x);
+	while(x != curSource) {
+	  curSource++;
+	  G->begin[curSource] = edgeid;
+	}
       }
+      edgeid++;
     }
-    edgeid++;
   }
+
+  while(curSource < G->numNodes) {
+    curSource++;
+    G->begin[curSource] = edgeid;
+  }
+
+  assert(edgeid == G->numEdges);
+
+  //  printf("The current source is %d\n",curSource);
 
   fclose(f);
 
