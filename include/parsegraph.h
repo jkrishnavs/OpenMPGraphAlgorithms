@@ -121,7 +121,7 @@ graph* parseGraph(const char* filename) {
   while(r != EOF) {   
     r = fscanf(f, "%d %d", &x, &y);
     if(r != EOF) {
-      printf("The edge id is %d from %d to %d \n",edgeid,x,y);
+      //printf("The edge id is %d from %d to %d \n",edgeid,x,y);
       G->node_idx[edgeid] = y;
       // format check
       if(x != curSource) {

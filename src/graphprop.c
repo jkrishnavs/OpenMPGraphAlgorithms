@@ -21,11 +21,14 @@ void avgEdgeDistance(graph *G) {
   long * edgeDistances =  (long*) malloc (sizeof(long) * G->numNodes);
   // long * edgeListSize =  (long*) malloc (sizeof(long) * G->numNodes);
 
+  /* printf("The number of nodes is %d \n", G->numNodes); */
+  /* printf("The number of edges is %d \n", G->numEdges); */
+
+    node_t v;
 
   //double contributions;
   #pragma omp parallel
   {
-    node_t v;
  
 #if defined(PARFOR_GUIDED)   
 #pragma omp for schedule(guided, PAR_CHUNKSIZE)
@@ -50,7 +53,7 @@ void avgEdgeDistance(graph *G) {
 
   aed = 0.0;
 
-  node_t v;
+  //  node_t v;
   for(v = 0; v < G->numNodes; v ++) {
     aed += ((double)edgeDistances[v])/G->numEdges;
   }
@@ -78,11 +81,14 @@ void avgClusterCoeff(graph *G) {
     for (v = 0; v < G->numNodes; v ++) {
       edge_t u_idx;
       localClustering[v] = 0;
+      
       for (u_idx = G->begin[v]; u_idx < G->begin[v+1]; u_idx ++) {
 	node_t u = G->node_idx [u_idx];
 	edge_t w_idx;
-	for (w_idx = G->begin[u_idx+1]; w_idx < G->begin[u_idx+1]; w_idx ++) {
+	// printf("The node is %d %d \n", v,u);
+	for (w_idx = u_idx+1; w_idx < G->begin[v+1]; w_idx ++) {
 	  node_t w = G->node_idx [w_idx];
+	  //printf("The check for neighbour is between %d and %d \n ",u,w);
 	  if (isNeighbour(G,w,u)) {
 	    localClustering[v] += 1;
 	  }
@@ -90,13 +96,14 @@ void avgClusterCoeff(graph *G) {
 	    localClustering[v] += 1;
 	  }
 	}
-	printf("The value of local clustering is %f \n", localClustering[v]);
       }
+      //      printf("The value of local clustering is %f \n", localClustering[v]);
+      
       int neighbours = (int) (G->begin[v+1] - G->begin[v]);
-      if(neighbours < 2) {
+      if(neighbours > 1) {
 	localClustering[v] = localClustering[v]/(neighbours * (neighbours -1));
-	printf("The value of local clustering is %f \n", localClustering[v]);
       }
+      // printf("The value of local clustering is %f \n", localClustering[v]);
     }
   }
   clusterCoeff = 0;
@@ -119,7 +126,7 @@ void diameter(graph *G) {
 double sparsityMeasure;
 
 void sparsity(graph *G) {
-  sparsityMeasure =  ((double)G->numEdges) / (G->numNodes * G->numNodes); 
+  sparsityMeasure =  ((double)G->numEdges) / (G->numNodes * (G->numNodes-1)); 
 }
 
 double sccindex;
@@ -150,6 +157,7 @@ void triangle_counting(graph *G) {
       edge_t u_idx;
       for (u_idx = G->begin[v]; u_idx < G->begin[v+1]; u_idx ++) {
 	node_t u = G->node_idx [u_idx];
+	//printf("The edge is from %d to %d \n", v, u);
 	if (u > v) {
 	  edge_t w_idx;
 	  for (w_idx = G->begin[v]; w_idx < G->begin[v+1]; w_idx ++) {
@@ -183,6 +191,7 @@ void output(graph *G) {
  * Common entry point for all algorithms,
  **/
 int runalgo(int argc,char** argv) {
+  omp_set_num_threads(2);
   if(argc < NO_OF_ARGS-1) {
     const char* argList[NO_OF_ARGS] = {" <inputfile> " };
     printError(INCORRECT_ARG_LIST, NO_OF_ARGS, argList);
