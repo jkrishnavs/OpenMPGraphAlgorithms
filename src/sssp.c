@@ -25,6 +25,9 @@ uint32_t* len;
  */
 
 
+#define NUM_LOCKS 64
+#define LOCK_SHIFT (26)
+
 
 void sssp(graph *G) {
   inittracking();
@@ -32,6 +35,14 @@ void sssp(graph *G) {
   
   bool* updated = (bool*) malloc(G->numNodes * sizeof(bool));
   bool* updatedNext = (bool*) malloc(G->numNodes *sizeof(bool));
+  
+  omp_lock_t* lockSet = (omp_lock_t) malloc(NUM_LOCKS * sizeof (omp_lock_t));
+
+  int i;
+  for(i = 0;i<NUM_LOCKS;i++) {
+    omp_init_lock(&lockSet[i]); 
+  }
+
   //unint32_t* updatedDist = (unint32_t*) malloc (G->numNodes *  sizeof(unint32_t));
   assert(updated != NULL);
   //assert(updatedDist != NULL);
@@ -73,11 +84,11 @@ void sssp(graph *G) {
 	  e = s_idx ;
 	  uint32_t newDist = dist[n] + len[e];
 	  if (dist[s]> newDist) {
-#pragma omp critical // TODO should we go for scoped lock?
-	    {
-	      updatedNext[s]  = true;
-	      dist[s] = newDist;
-	    }
+	    int lockid = s <<LOCK_SHIFT;
+	    omp_set_lock(&lockSet[lockid]); 
+	    updatedNext[s]  = true;
+	    dist[s] = newDist;
+	    omp_unset_lock(&lockSet[lockid]); 
 #pragma omp atomic
 	    __E8 |= true;
 	  }
