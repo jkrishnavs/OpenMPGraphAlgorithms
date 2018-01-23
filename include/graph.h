@@ -11,9 +11,9 @@
 #include<assert.h>
 
 #ifdef GM_NODE64
-typedef int64_t edge_t;
-typedef int64_t node_t;
-typedef int64_t value_t;
+typedef int edge_t;
+typedef int node_t;
+typedef int value_t;
 #define GM_SIZE_CHECK_VAR link_error_becuase_gm_graph_lib_is_configured_as_node64_edge64_but_the_application_is_not
 #else
 typedef int32_t value_t;

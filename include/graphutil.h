@@ -136,8 +136,9 @@ void createReverseEdges(graph* G) {
   // initialize
 
   node_t* relLoc = (node_t*) malloc ((nodes)* sizeof(node_t));
-
+  assert(relLoc != NULL);
   node_t i;
+  
 #pragma omp parallel for private(i)
   for (i = 0; i < nodes; i++) {
     G->r_begin[i] = 0;
@@ -149,7 +150,7 @@ void createReverseEdges(graph* G) {
     for (edge_t e = G->begin[i]; e < G->begin[i + 1]; e++) {
       node_t dest = G->node_idx[e];
 #pragma omp atomic
-      G->r_begin[dest]++;
+      G->r_begin[dest+1]++;
     }
   }
 
@@ -173,7 +174,9 @@ void createReverseEdges(graph* G) {
     edge_t e;
     for (e = G->begin[i]; e < G->begin[i + 1]; e++) {
       node_t dest = G->node_idx[e];
-      edge_t r_edge_idx = G->r_begin[dest]+ (relLoc[dest]++);
+      edge_t r_edge_idx = G->r_begin[dest]+ (relLoc[dest]);
+      relLoc[dest]++;
+      assert(r_edge_idx < G->r_begin[dest+1]);
       G->r_node_idx[r_edge_idx] = i;
     }
   }
