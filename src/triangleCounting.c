@@ -8,16 +8,18 @@
 #include "mainFunctions.h"
 #include "print.h"
 #include "powerperformacetracking.h"
-#include "conduct.h"
-#include <float.h>
+#include "triangleCounting.h"
+
 
 #define NO_OF_ARGS 1
 
 
 
+
 void output(graph *G) {
-  printf("sum C = %lf\n", __conduct);
+  printf("\nThe total number of Triangles = %lld\n", T);
 }
+
 
 
 /***
@@ -30,30 +32,14 @@ int runalgo(int argc,char** argv) {
     return -1;
   }
   graph* G = readGraph(argv[1]);
-  G_member = (int32_t*) malloc (G->numNodes * sizeof(int32_t));
-  srand(0);
-#pragma parallel for 
-  for (int i = 0; i < G->numNodes; i++) 
-    G_member[i] = 0;
-  
-  for (int i = 0; i < G->numNodes; i++) {
-    int32_t r = rand() % 100;
-    if (r < 10)
-      G_member[i] = 0;  // 10%
-    else if (r < (10 + 20))
-      G_member[i] = 1;  // 20%
-    else if (r < (10 + 20 + 30))
-      G_member[i] = 2;  // 30%
-    else
-      G_member[i] = 3;  // 40%
-  }
   runKernel(G);
   output(G);
   return 0;
 }
 
+
 inline void kernel(graph *G) {
-  conduct(G);
+  triangleCounting(G);
 }
 
 
