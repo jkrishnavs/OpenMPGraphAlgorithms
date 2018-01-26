@@ -2,8 +2,12 @@ float __conduct = 0;
 
 int32_t *G_member;
 
+void outputConduct(graph *G) {
+  printf("sum C = %lf\n", __conduct);
+}
+
 void conduct(graph *G) {
-  inittracking();
+  inittracking("conduct.csv");
   for (int i = 0; i < 4; i++) {  
     float m = 0.0 ;
     int32_t __S2 = 0 ;

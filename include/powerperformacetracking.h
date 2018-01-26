@@ -7,8 +7,8 @@
  ******************/
 #include "energylib.h"
 
-void inittracking() {
-  energymonitor__setfilename("prof.csv");
+void inittracking(const char* profName) {
+  energymonitor__setfilename(profName);
   energymonitor__init(ONLINECORES,0.2);
   energymonitor__trackpoweronly();
   energymonitor__startprofiling();

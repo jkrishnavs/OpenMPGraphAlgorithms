@@ -1,10 +1,36 @@
+#include <limits.h>
+
+node_t root;
+uint32_t* dist;
+uint32_t* len;
+
+
 
 #define NUM_LOCKS 16
 #define LOCK_SHIFT (28)
 
 
+
+
+
+
+void outputsssp(graph *G) {
+
+  int counter  = 0;
+  
+  printf("The shortest path to the following nodes from the root Node %d\n", root);
+  for (node_t n = 0; n < G->numNodes && counter < 5; n++) {
+    if(dist[n] != UINT_MAX && n != root) {
+      printf(" %d -> %d : %ud \n", root, n, dist[n]);
+      counter ++;
+    }
+  }  
+}
+
+
+
 void sssp(graph *G) {
-  inittracking();
+  inittracking("sssp.csv");
   bool fin = false ;
   
   bool* updated = (bool*) malloc(G->numNodes * sizeof(bool));

@@ -14,10 +14,7 @@
 
 
 void output(graph *G) {
-  for (int i = 0; i < 10 && i < G->numNodes; i++) {
-    printf("rank[%d] = %0.9lf\n", i, pg_rank[i]);
-  }
-  free(pg_rank);
+  outputPageRank(G);
 }
 
 
@@ -28,7 +25,7 @@ int runalgo(int argc,char** argv) {
   int flag = 0;
   /* Default values  */
   maxIters = 100;
-  e = 0.001;
+  e = 0.01;
   d = 0.85;
   
   if(argc > 2) {

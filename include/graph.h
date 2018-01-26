@@ -76,6 +76,26 @@ struct graph
 
 typedef struct graph graph;
 
+
+void deleteGraph(graph *G) {
+
+  free(G->begin);
+  free(G->node_idx);
+  if(G->node_idx_src != NULL)
+    free(G->node_idx_src);  
+  if(G->r_begin != NULL)
+    free(G->r_begin);
+  if(G->r_node_idx != NULL)
+    free(G->r_node_idx);
+  if(G->r_node_idx_src != NULL)
+    free(G->r_node_idx_src);
+  if(G->e_idx2idx != NULL)
+    free(G->e_idx2idx);
+  if(G->e_revidx2idx != NULL)
+    free(G->e_revidx2idx);
+  free(G);
+}
+
 graph* createGraph() {
   graph* G  = (graph*) malloc(sizeof(graph));
   assert(G != NULL);

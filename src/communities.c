@@ -20,40 +20,7 @@ void communities(graph* G);
 
 
 void output(graph *G) {
-  // print output.
-  node_t commList[10];
-  int commCount[10];
-  int i;
-  for(i=0;i<10; i++) {
-    commList[i] = NIL_NODE;
-    commCount[i] = 0;
-  }
-  int found;
-  int curIndex = 0;
-  int t;
-  for (t = 0; t < G->numNodes; t++) {
-    found  = -1;
-    for(i = 0; i<10;i++) {
-      if(comm[t] == commList[i]) {
-	found = i;
-	break;
-      }
-    }
-    if(found != -1) {
-      commCount[found]++;
-    } else if(curIndex < 10) {
-      commCount[curIndex] = 1;
-      commList[curIndex] = comm[t];
-      curIndex++;
-    }    
-  }
-  printf("Community\t#Nodes\t\t(Showing max 10 entries)\n");
-  for (i=0; i<10; i++) {
-    if(commList[i] != NIL_NODE)
-      printf("%d\t\t%d\n", commList[i], commCount[i]);
-  }
-  free(comm);
-  comm = NULL;
+  outputCommunities(G);
 }
 
 
@@ -81,8 +48,7 @@ int runalgo(int argc,char** argv) {
     return -1;
   }
   
-  comm = (node_t*) malloc (G->numNodes * sizeof(node_t));
-  assert(comm != NULL);
+  initCommunities();
   runKernel(G);
   output(G);
   return 0;

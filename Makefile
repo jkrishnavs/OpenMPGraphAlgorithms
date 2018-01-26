@@ -2,7 +2,7 @@
 # please run ./configure before make
 include Makefile.in
 CC = $(CCINST) -fopenmp
-LDFLAGS = -O3
+LDFLAGS = -O3 -lenergymodule
 OBJFLAGS = -c -Wall
 DEBUGFLAGS = -g -Wall
 PRECOMPILE =  -E -P
@@ -29,21 +29,25 @@ OBJS=$(SRCS:.c=.o)
 
 PROGS = $(patsubst %.c,%,$(SRCS))
 
+.phony: bin
+
 all: bin
 
 ifeq ($(TASKLOOP_DEFINED), yes)
-bin: $(OBJ)/%.o  taskobj
+bin: $(SRCS)  taskobj
+else
+bin: $(SRCS)
 endif
-bin: $(OBJ)/%.o  
-	$(CC) $(LDFLAGS) -o $(basename $(notdir $<)) $<
+	$(CC) -D $(CAPABILITY) $(ONLINECORESFLAG) $(INC) $(LDFLAGS)  -o $(BIN)/$(basename $(notdir $<))_static   $<
+	$(CC) -D $(CAPABILITY) $(ONLINECORESFLAG) $(INC) $(LDFLAGS) $(DYNAMICFL) -o $(BIN)/$(basename $(notdir $<))_dynamic   $<
+	$(CC) -D $(CAPABILITY) $(ONLINECORESFLAG) $(INC) $(LDFLAGS) $(GUIDEDFL) -o $(BIN)/$(basename $(notdir $<))_guided   $<
+taskobj: $(SRCS) 
+	$(CC) -D $(CAPABILITY) $(ONLINECORESFLAG) $(INC) $(LDFLAGS) $(TASKFL) -o $(OBJ)/$(basename $(notdir $<))_task   $<
+
+
+#######	$(CC) $(LDFLAGS) -o $(basename $(notdir $<)) $<
 
 $(OBJ)/%.o: $(SRCS)	
-	$(CC) $(OBJFLAGS)  -D $(CAPABILITY) $(ONLINECORESFLAG) $(INC) -o $(OBJ)/$(basename $(notdir $<))_static.o   $<
-	$(CC) $(OBJFLAGS)  -D $(CAPABILITY) $(ONLINECORESFLAG) $(INC) $(DYNAMICFL) -o $(OBJ)/$(basename $(notdir $<))_dynamic.o   $<
-	$(CC) $(OBJFLAGS)  -D $(CAPABILITY) $(ONLINECORESFLAG) $(INC) $(GUIDEDFL) -o $(OBJ)/$(basename $(notdir $<))_guided.o   $<
-taskobj: $(SRCS)
-	$(CC) $(OBJFLAGS)   -D $(CAPABILITY) $(ONLINECORESFLAG) $(INC) $(TASKFL) -o $(OBJ)/$(basename $(notdir $<))_task.o   $<
-
 ifeq ($(TASKLOOP_DEFINED), yes )
 debug:
 	$(CC) $(DEBUGFLAGS) $(INC) -D $(CAPABILITY) $(ONLINECORESFLAG) $(TASKFL) -o $(DEBUG)/$(basename $(notdir $<))_task $<

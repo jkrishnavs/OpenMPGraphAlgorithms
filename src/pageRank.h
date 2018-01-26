@@ -6,9 +6,16 @@ double* pg_rank;
 
 
 
+void outputPageRank(graph *G) {
+  for (int i = 0; i < 10 && i < G->numNodes; i++) {
+    printf("rank[%d] = %0.9lf\n", i, pg_rank[i]);
+  }
+  free(pg_rank);
+}
+
 
 void pageRank(graph* G) {
-  inittracking();
+  inittracking("pageRank.csv");
   float eprime = (float) e;
   float diff = 0.0 ;
   int32_t cnt = 0 ;

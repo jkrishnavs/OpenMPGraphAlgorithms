@@ -1,7 +1,14 @@
 int64_t T = 0 ;
 
+
+void outputTriangleCounting(graph *G) {
+  printf("\nThe total number of Triangles = %lld\n", T);
+}
+
+
+
 void triangleCounting(graph *G) {
-  inittracking();
+  inittracking("triangleCounting.csv");
 #pragma omp parallel
   {
     int64_t T_private  = 0;

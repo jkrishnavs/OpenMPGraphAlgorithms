@@ -12,6 +12,7 @@ typedef enum executionSection {
 
 typedef enum errorCodes {
   GRAPH_FILE_NOT_FOUND,
+  GRAPH_FILE_NOT_CREATED,
   OUT_OF_MEMORY,
   ARRAY_ACCESS_OUT_OF_BOUNDS,
   TASKLOOP_NOTENABLED,

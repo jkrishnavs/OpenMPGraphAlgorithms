@@ -17,7 +17,7 @@
 
 
 void output(graph *G) {
-  printf("\nThe total number of Triangles = %lld\n", T);
+  outputTriangleCounting(G);
 }
 
 

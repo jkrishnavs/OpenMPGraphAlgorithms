@@ -42,7 +42,28 @@ void skipNlines(FILE* f, int n) {
 
 
 void writeBackGraph(graph *G, const char* filename) {
-  /* TODO if requied */
+  FILE* fp;
+  fp = fopen(filename, "w");
+  if(fp == NULL) {
+    printError(GRAPH_FILE_NOT_CREATED,0, NULL);
+    return;
+  }
+
+  int i;
+  for(i=0;i<G->numNodes;i++) {
+    fprintf(fp, "%d * \n", i);
+  }
+
+
+  for (node_t u1 = 0; u1 < G->numNodes; u1 ++) {
+    for (edge_t j = G->begin[u1];j < G->begin[u1+1] ; j ++) {
+      node_t t = G->node_idx [j];
+      fprintf(fp, "%d %d \n", u1, t);
+    }
+  }
+  
+  fclose(fp);
+  return;
 }
 
 

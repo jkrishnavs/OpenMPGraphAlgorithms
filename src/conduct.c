@@ -16,7 +16,7 @@
 
 
 void output(graph *G) {
-  printf("sum C = %lf\n", __conduct);
+  outputConduct(G);
 }
 
 

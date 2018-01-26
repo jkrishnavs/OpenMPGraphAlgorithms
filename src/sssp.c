@@ -10,14 +10,10 @@
 #include "print.h"
 #include "sssp.h"
 #include <stdlib.h>
-#include <limits.h>
 
 #define NO_OF_ARGS 4
 
 
-node_t root;
-uint32_t* dist;
-uint32_t* len;
 
 /* 
    Benign non determinism present
@@ -27,20 +23,9 @@ uint32_t* len;
 
 void sssp(graph *G);
 
-
-void output(graph *G) {
-
-  int counter  = 0;
-  
-  printf("The shortest path to the following nodes from the root Node %d\n", root);
-  for (node_t n = 0; n < G->numNodes && counter < 5; n++) {
-    if(dist[n] != UINT_MAX && n != root) {
-      printf(" %d -> %d : %ud \n", root, n, dist[n]);
-      counter ++;
-    }
-  }  
+void output(graph* G) {
+  outputsssp(G);
 }
-
 
 
 /***

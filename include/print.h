@@ -45,6 +45,9 @@ void printError(errorCodes code, int NoOfMsgs,const char** msgs) {
   case GRAPH_FILE_NOT_FOUND:
      printf("Error: Input Graph File Not Found. \n");
      break;
+  case GRAPH_FILE_NOT_CREATED:
+     printf("Error: Unable to create output Graph File. \n");
+     break;   
   case OUT_OF_MEMORY:
     printf("Error: Unable to allocate memory.\n");
     break;
