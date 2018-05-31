@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 #ifndef PARSE_GRAPH_H
 #define PARSE_GRAPH_H
 #include "graph.h"
@@ -54,11 +55,21 @@ void writeBackGraph(graph *G, const char* filename) {
     fprintf(fp, "%d * \n", i);
   }
 
+  bool hasEdgeWeight = false;
+
+  if(G->weights != NULL) {
+    hasEdgeWeight = true;
+  }
+
 
   for (node_t u1 = 0; u1 < G->numNodes; u1 ++) {
     for (edge_t j = G->begin[u1];j < G->begin[u1+1] ; j ++) {
       node_t t = G->node_idx [j];
-      fprintf(fp, "%d %d \n", u1, t);
+      if(hasEdgeWeight) {
+	fprintf(fp, "%d %d %d \n", u1, t, G->weights[j]);
+      } else {
+	fprintf(fp, "%d %d \n", u1, t);
+      }
     }
   }
   
@@ -67,15 +78,55 @@ void writeBackGraph(graph *G, const char* filename) {
 }
 
 
-graph* parseGraph(const char* filename) {
+graph* parseGraph(const char* filename, const char* graphformat) {
   FILE *f;
 
   f = fopen(filename, "r");
   if(f == NULL) {
-    printError(GRAPH_FILE_NOT_FOUND,0, NULL);
+    printError(GRAPH_FILE_NOT_FOUND, 0, NULL);
     return NULL;
   }
 
+  printf("%s %s \n", filename, graphformat);
+  
+  /* read the graph format */
+  FILE *ff;
+  ff = fopen(graphformat, "r");
+  
+  if(ff == NULL) {
+    printError(GRAPH_FILE_NOT_FOUND, 0, NULL);
+    return NULL;
+  }
+
+  char* words;
+
+
+  char line[100];
+  size_t len;
+  ssize_t read;
+  
+  
+  bool hasEdgeWeight = false;
+  while (fgets(line, 100, ff) !=NULL) {
+    //printf("Retrieved line of length %zu :\n", read);
+    printf("%s", line);
+    if(strstr(line, "Edge") != NULL) {
+      if(strstr(line, "<INT>") != NULL) {
+	hasEdgeWeight = true;
+      }
+      /* words = strtok (line," ,.-"); */
+      /* while (words != NULL) { */
+      /* 	printf ("%s\n", words); */
+      /* 	words = strtok (NULL, " ,.-"); */
+      /* } */
+    }
+  }
+  
+  if(hasEdgeWeight) {
+    printf("The input graph has edge weights\n");
+  } else {
+    printf("The input graph does not have edge weights\n");
+  }
   
   /**
      TODO if required.
@@ -125,6 +176,10 @@ graph* parseGraph(const char* filename) {
   assert(!feof(f));
 
   G->node_idx = (node_t*) malloc(sizeof(node_t) * G->numEdges);
+  if(hasEdgeWeight) {
+    G->weights = (int*) malloc(sizeof(int) * G->numEdges);
+    assert(G->weights != NULL);  
+  }
 
   assert(G->node_idx != NULL);
 
@@ -141,12 +196,18 @@ graph* parseGraph(const char* filename) {
   node_t y;
   node_t curSource = 0;
   G->begin[curSource] = 0;
- 
-  while(r != EOF) {   
-    r = fscanf(f, "%d %d", &x, &y);
+  int w;
+  while(r != EOF) {
+    if(hasEdgeWeight) {
+      r = fscanf(f, "%d %d %d", &x, &y, &w);
+    } else {
+      r = fscanf(f, "%d %d", &x, &y);
+    }
     if(r != EOF) {
       //printf("The edge id is %d from %d to %d \n",edgeid,x,y);
       G->node_idx[edgeid] = y;
+      if(hasEdgeWeight)
+	G->weights[edgeid] = w;
       // format check
       if(x != curSource) {
 	assert(curSource < x);
@@ -154,7 +215,7 @@ graph* parseGraph(const char* filename) {
 	  curSource++;
 	  G->begin[curSource] = edgeid;
 	}
-      }
+      } 
       edgeid++;
     }
   }

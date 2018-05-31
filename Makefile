@@ -1,12 +1,13 @@
 #Make file
 # please run ./configure before make
 include Makefile.in
-CC = $(CCINST) -fopenmp
-LDFLAGS = -O3 -lenergymodule
+CC =$(CCINST) -fopenmp
+LDFLAGS = -O3 
+EM= -lenergymodule
 OBJFLAGS = -c -Wall
 DEBUGFLAGS = -g -Wall
 PRECOMPILE =  -E -P
-INC = -I include
+INC = -I ./include/ -I../Energymonitorlibrary/include/
 PRE = precompiled
 OBJ = obj
 BIN = bin
@@ -18,45 +19,61 @@ ifdef SET_CHUNKSIZE
 endif
 DYNAMICFL= -D  PARFOR_DYNAMIC -D PAR_CHUNKSIZE=$(CHUNKSIZE)
 GUIDEDFL= -D PARFOR_GUIDED -D PAR_CHUNKSIZE=$(CHUNKSIZE)
-TASKFL= -D TASKLOOP_DEFINED
+TASKFL= -D TASKLOOP_DEFINED -D NUM_TASKS=$(NUMTASKS)
+ONLINECORESFLAG=-D ONLINECORES=$(ONLINE_CORES)
 
 
 # (PARFOR_STATIC PARFOR_GUIDED PARFOR_DYNAMIC TASKLOOP)
 
 SRCS=$(wildcard src/*.c)
+DEBUGS=$(wildcard src/*.c)
 
 OBJS=$(SRCS:.c=.o)
 
 PROGS = $(patsubst %.c,%,$(SRCS))
 
-.phony: bin
+.phony: $(SRCS) 
 
-all: bin
+all: $(SRCS) 
+debug: $(DEBUGS)
 
+# ifeq ($(TASKLOOP_DEFINED), yes)
+# bin: $(SRCS)  taskobj
+# else
+# bin: $(SRCS)
+# endif
+# 	$(CC) -D $(CAPABILITY) $(ONLINECORESFLAG) $(INC)  $(LDFLAGS) $<  $(EM) -o $(BIN)/$(basename $(notdir $<))_static  
+# 	$(CC) -D $(CAPABILITY) $(ONLINECORESFLAG) $(INC) $(LDFLAGS) $(DYNAMICFL) $< $(EM) -o $(BIN)/$(basename $(notdir $<))_dynamic   
+# 	$(CC) -D $(CAPABILITY) $(ONLINECORESFLAG) $(INC) $(LDFLAGS) $(GUIDEDFL) $< $(EM) -o $(BIN)/$(basename $(notdir $<))_guided  
+# taskobj: $(SRCS) 
+# 	$(CC) -D $(CAPABILITY) $(ONLINECORESFLAG) $(INC) $(LDFLAGS) $(TASKFL) $< $(EM) -o $(OBJ)/$(basename $(notdir $<))_task
+
+
+#######	$(CC) $(LDFLAGS) -o $(basename $(notdir $<)) $
 ifeq ($(TASKLOOP_DEFINED), yes)
-bin: $(SRCS)  taskobj
+$(SRCS):
+	$(CC) -D $(CAPABILITY) $(ONLINECORESFLAG) $(INC) $(LDFLAGS) $(TASKFL) $@ $(EM) -o $(BIN)/$(basename $(notdir $@))_task
 else
-bin: $(SRCS)
+$(SRCS): 
 endif
-	$(CC) -D $(CAPABILITY) $(ONLINECORESFLAG) $(INC) $(LDFLAGS)  -o $(BIN)/$(basename $(notdir $<))_static   $<
-	$(CC) -D $(CAPABILITY) $(ONLINECORESFLAG) $(INC) $(LDFLAGS) $(DYNAMICFL) -o $(BIN)/$(basename $(notdir $<))_dynamic   $<
-	$(CC) -D $(CAPABILITY) $(ONLINECORESFLAG) $(INC) $(LDFLAGS) $(GUIDEDFL) -o $(BIN)/$(basename $(notdir $<))_guided   $<
-taskobj: $(SRCS) 
-	$(CC) -D $(CAPABILITY) $(ONLINECORESFLAG) $(INC) $(LDFLAGS) $(TASKFL) -o $(OBJ)/$(basename $(notdir $<))_task   $<
+	$(CC) -D $(CAPABILITY) $(ONLINECORESFLAG) $(INC)  $(LDFLAGS) $@  $(EM) -o $(BIN)/$(basename $(notdir $@))_static  
+	$(CC) -D $(CAPABILITY) $(ONLINECORESFLAG) $(INC) $(LDFLAGS) $(DYNAMICFL) $@ $(EM) -o $(BIN)/$(basename $(notdir $@))_dynamic 
+	$(CC) -D $(CAPABILITY) $(ONLINECORESFLAG) $(INC) $(LDFLAGS) $(GUIDEDFL) $@ $(EM) -o $(BIN)/$(basename $(notdir $@))_guided  
 
 
-#######	$(CC) $(LDFLAGS) -o $(basename $(notdir $<)) $<
+dynamicwithchunkSize:
+	$(CC) -D $(CAPABILITY) $(ONLINECORESFLAG) $(INC) $(LDFLAGS) $(DYNAMICFL) $(TARGET) $(EM) -o $(BIN)/$(basename $(notdir $(TARGET)))_dynamic_$(CHUNKSIZE) 
 
-$(OBJ)/%.o: $(SRCS)	
-ifeq ($(TASKLOOP_DEFINED), yes )
-debug:
-	$(CC) $(DEBUGFLAGS) $(INC) -D $(CAPABILITY) $(ONLINECORESFLAG) $(TASKFL) -o $(DEBUG)/$(basename $(notdir $<))_task $<
-else
-debug:
-endif
-	$(CC) $(DEBUGFLAGS) $(INC) -D $(CAPABILITY) $(ONLINECORESFLAG) -o $(DEBUG)/$(basename $(notdir $<))_static $<
-	$(CC) $(DEBUGFLAGS) $(INC) -D $(CAPABILITY) $(ONLINECORESFLAG) $(DYNAMICFL) -o $(DEBUG)/$(basename $(notdir $<))_dynamic $<
-	$(CC) $(DEBUGFLAGS) $(INC) -D $(CAPABILITY) $(ONLINECORESFLAG) $(GUIDEDFL) -o $(DEBUG)/$(basename $(notdir $<))_guided $<
+
+# ifeq ($(TASKLOOP_DEFINED), yes )
+# $(DEBUGS):
+# 	$(CC) $(DEBUGFLAGS) $(INC) -D $(CAPABILITY) $(ONLINECORESFLAG) $(TASKFL)  $(LDFLAGS) $@ $(EM) -o $(DEBUG)/$(basename $(notdir $@))_task
+# else
+# $(DEBUGS):
+# endif
+# 	$(CC) $(DEBUGFLAGS) $(INC) -D $(CAPABILITY) $(ONLINECORESFLAG)  $(LDFLAGS) $@ $(EM) -o $(DEBUG)/$(basename $(notdir $@))_static
+# 	$(CC) $(DEBUGFLAGS) $(INC) -D $(CAPABILITY) $(ONLINECORESFLAG) $(DYNAMICFL) $(LDFLAGS) $@ $(EM) -o $(DEBUG)/$(basename $(notdir $<))_dynamic
+# 	$(CC) $(DEBUGFLAGS) $(INC) -D $(CAPABILITY) $(ONLINECORESFLAG) $(GUIDEDFL)  $(LDFLAGS) $@ $(EM) -o $(DEBUG)/$(basename $(notdir $<))_guided
 
 
 fromprecompiled: precompile

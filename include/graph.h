@@ -47,6 +47,8 @@ struct graph
   node_t* node_idx; /* sparse column. Each value represents the destination of the edge. Array size = M. */
   node_t* node_idx_src;  /* sparse column. Created for fast processing. Each value represents the source of the edge. Array size = M. */
 
+  int* weights; /* Edge weights */
+  
 
   /* Below graph  representation of reverse graph (Where all edges in the graph is reversed).
      Some algorithms may want to process the information from desitnation to source.
@@ -82,7 +84,9 @@ void deleteGraph(graph *G) {
   free(G->begin);
   free(G->node_idx);
   if(G->node_idx_src != NULL)
-    free(G->node_idx_src);  
+    free(G->node_idx_src);
+  if(G->weights != NULL)
+    free(G->weights);
   if(G->r_begin != NULL)
     free(G->r_begin);
   if(G->r_node_idx != NULL)
@@ -107,6 +111,7 @@ graph* createGraph() {
   G->r_node_idx_src = NULL;
   G->e_idx2idx = NULL;
   G->e_revidx2idx = NULL;
+  G->weights = NULL;
   G->reverseEdge = false;
   G->frozen = false;
   G->directed = false;
