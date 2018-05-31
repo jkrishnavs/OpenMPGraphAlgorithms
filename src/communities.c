@@ -8,10 +8,9 @@
 #include "mainFunctions.h"
 #include "print.h"
 #include "powerperformacetracking.h"
-#include "nodeIntMap.h"
 #include "communities.h"
 
-#define NO_OF_ARGS 2
+#define NO_OF_ARGS 3
 
 
 void communities(graph* G);
@@ -31,12 +30,12 @@ int runalgo(int argc,char** argv) {
   int flag = 0;
   maxItrs = 10;
 
-  if(argc > 2) {
-    maxItrs = atoi(argv[2]);
+  if(argc > 3) {
+    maxItrs = atoi(argv[3]);
     if(maxItrs <=0) flag = 1;
   }
 
-  graph* G = readGraph(argv[1]);
+  graph* G = readGraph(argv[1], argv[2]);
 
   if(G == NULL) {
     flag = 2;
@@ -48,7 +47,7 @@ int runalgo(int argc,char** argv) {
     return -1;
   }
   
-  initCommunities();
+  initCommunities(G);
   runKernel(G);
   output(G);
   return 0;

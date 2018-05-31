@@ -11,7 +11,7 @@
 #include "sssp.h"
 #include <stdlib.h>
 
-#define NO_OF_ARGS 4
+#define NO_OF_ARGS 5
 
 
 
@@ -39,18 +39,18 @@ int runalgo(int argc,char** argv) {
   int flag = 0;
 
 
-  if(argc > 2) {
-    root  = atoi(argv[2]);
+  if(argc > 3) {
+    root  = atoi(argv[3]);
     if(root < 0) flag = 1;
   }
 
-  if(argc > 3) {
-    maxLength = atoi(argv[3]);
+  if(argc > 4) {
+    maxLength = atoi(argv[4]);
     if(maxLength < 1) flag = 2;
   }
 
-  if(argc > 4) {
-    seed = atoi(argv[4]);
+  if(argc > 5) {
+    seed = atoi(argv[5]);
     if(seed < 0) flag = 3;
   }
   
@@ -64,15 +64,17 @@ int runalgo(int argc,char** argv) {
 
   
   
-  graph* G = readGraph(argv[1]);
-  len = (uint32_t*) malloc (G->numEdges * sizeof(uint32_t));
-  /*
-    Random generation of edge lengths
-   */
-  srand(seed);
-
-  for(edge_t e = 0; e < G->numEdges; e++) {
-    len[e] = (rand()%maxLength + 1);
+  graph* G = readGraph(argv[1], argv[2]);
+  if(G->weights == NULL) {
+    G->weights = (int*) malloc (G->numEdges * sizeof(int));
+    /*
+      Random generation of edge lengths
+    */
+    srand(seed);
+    
+    for(edge_t e = 0; e < G->numEdges; e++) {
+      G->weights[e] = (rand()%maxLength + 1);
+    }
   }
   dist = (uint32_t*) malloc (G->numNodes * sizeof (uint32_t));
   assert(dist != NULL);

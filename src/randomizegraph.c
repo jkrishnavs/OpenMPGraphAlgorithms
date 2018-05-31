@@ -11,7 +11,7 @@
 #include <time.h>
 #include <stdlib.h>
 
-#define NO_OF_ARGS 2
+#define NO_OF_ARGS 3
 
 typedef struct graphmap{
   node_t orig;
@@ -86,6 +86,37 @@ graph* randomizeGraph(graph *G) {
     }
     assert(ed == newG->begin[i+1]);
   }
+
+
+
+  if(G->weights != NULL) {
+    int w = 0;
+    bool found  = false;
+    edge_t pos;
+    newG->weights = (int*) malloc(sizeof(int) * newG->numEdges);
+    for (x0 = 0; x0 < G->numNodes; x0 ++) {
+      for (edge_t y = G->begin[x0];y < G->begin[x0+1] ; y ++) {
+	w = G->weights[y];
+	node_t d =  G->node_idx[x0];      
+	node_t newS = gm[x0].newPos;
+	node_t newD = gm[d].newPos;
+	/* assert edge is added */
+	found = false;
+	pos = NIL_EDGE;
+	for(edge_t newY = newG->begin[newS]; newY < newG->begin[newS+1]; newY++) {
+	  if(newG->node_idx[newY] == newD) {
+	    found = true;
+	    pos = newY;
+	    break;
+	  }
+	}
+	assert(pos != NIL_EDGE);
+	newG->weights[pos] = w;
+      }
+    }
+  }
+
+  free(gm);
   return newG;
 }
 
@@ -95,14 +126,14 @@ graph* randomizeGraph(graph *G) {
 int runalgo(int argc,char** argv) {
   omp_set_num_threads(2);
   if(argc < NO_OF_ARGS-1) {
-    const char* argList[NO_OF_ARGS] = {" <inputfile> " , "<outputfile>"};
+    const char* argList[NO_OF_ARGS] = {" <inputfile> " , "graphformat", "<outputfile>"};
     printError(INCORRECT_ARG_LIST, NO_OF_ARGS, argList);
     return -1;
   }
-  graph* G = readGraph(argv[1]);
+  graph* G = readGraph(argv[1], argv[2]);
   graph* newG = randomizeGraph(G);
   deleteGraph(G);
-  writeGraph(newG, argv[2]);
+  writeGraph(newG, argv[3]);
   return 0;
 }
 

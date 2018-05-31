@@ -11,7 +11,7 @@
 #include "conduct.h"
 #include <float.h>
 
-#define NO_OF_ARGS 1
+#define NO_OF_ARGS 2
 
 
 
@@ -29,7 +29,7 @@ int runalgo(int argc,char** argv) {
     printError(INCORRECT_ARG_LIST, NO_OF_ARGS, argList);
     return -1;
   }
-  graph* G = readGraph(argv[1]);
+  graph* G = readGraph(argv[1], argv[2]);
   G_member = (int32_t*) malloc (G->numNodes * sizeof(int32_t));
   srand(0);
 #pragma parallel for 

@@ -8,6 +8,7 @@ void outputConduct(graph *G) {
 
 void conduct(graph *G) {
   inittracking("conduct.csv");
+  __conduct = 0;
   for (int i = 0; i < 4; i++) {  
     float m = 0.0 ;
     int32_t __S2 = 0 ;
@@ -95,6 +96,12 @@ void conduct(graph *G) {
     }
     
     m = (float)((__S2 < __S3)?__S2:__S3) ;
+
+    if(m == 0) {
+      __conduct += __S4;
+    } else {
+      __conduct += __S4/m;
+    }
   
   }
   endtracking();

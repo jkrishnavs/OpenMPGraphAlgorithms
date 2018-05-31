@@ -2,7 +2,6 @@
 
 node_t root;
 uint32_t* dist;
-uint32_t* len;
 
 
 
@@ -78,11 +77,9 @@ void sssp(graph *G) {
 #endif
     for (node_t n = 0; n < G->numNodes; n ++) {
       if (updated[n] == true) {
-	for (edge_t s_idx = G->begin[n];s_idx < G->begin[n+1] ; s_idx ++) {
-	  node_t s = G->node_idx [s_idx];
-	  edge_t e;
-	  e = s_idx ;
-	  uint32_t newDist = dist[n] + len[e];
+	for (edge_t e = G->begin[n];e < G->begin[n+1] ; e ++) {
+	  node_t s = G->node_idx [e];
+	  uint32_t newDist = dist[n] + G->weights[e];
 	  if (dist[s]> newDist) {
 	    int lockid = s >>LOCK_SHIFT;
 	    omp_set_lock(&lockSet[lockid]); 

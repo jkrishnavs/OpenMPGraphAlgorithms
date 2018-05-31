@@ -1,3 +1,5 @@
+#include "nodeIntMap.h"
+
 node_t* comm = NULL;
 
 int maxItrs;
@@ -42,7 +44,7 @@ void outputCommunities(graph *G) {
 }
 
 
-void initCommunities() {
+void initCommunities(graph *G) {
   
   comm = (node_t*) malloc (G->numNodes * sizeof(node_t));
   assert(comm != NULL);
@@ -100,11 +102,13 @@ void communities(graph* G) {
 	  for (edge_t y_idx = G->begin[x0];y_idx < G->begin[x0+1] ; y_idx ++) {
 	    node_t y = G->node_idx [y_idx];
 	    node_t source;
+#pragma omp atomic read
 	    source = comm[y] ;
 	    changeValue(map, source, 1);
 	  }
 	  node_t maxVal = mapMaxValueKey(map); 
-	  if ( comm[x0] != maxVal) {
+	  if ( comm[x0] != maxVal && maxVal != NIL_NODE) {
+#pragma omp atomic write
 	    comm[x0] = maxVal;
 	    finished = false ;
 	  }

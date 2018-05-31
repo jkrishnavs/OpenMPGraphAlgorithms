@@ -11,7 +11,7 @@
 #include "triangleCounting.h"
 
 
-#define NO_OF_ARGS 1
+#define NO_OF_ARGS 2
 
 
 
@@ -31,7 +31,7 @@ int runalgo(int argc,char** argv) {
     printError(INCORRECT_ARG_LIST, NO_OF_ARGS, argList);
     return -1;
   }
-  graph* G = readGraph(argv[1]);
+  graph* G = readGraph(argv[1], argv[2]);
   runKernel(G);
   output(G);
   return 0;

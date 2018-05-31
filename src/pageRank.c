@@ -10,7 +10,7 @@
 #include "powerperformacetracking.h"
 #include "pageRank.h"
 
-#define NO_OF_ARGS 4
+#define NO_OF_ARGS 5
 
 
 void output(graph *G) {
@@ -28,18 +28,18 @@ int runalgo(int argc,char** argv) {
   e = 0.01;
   d = 0.85;
   
-  if(argc > 2) {
-    maxIters = atoi(argv[2]);
+  if(argc > 3) {
+    maxIters = atoi(argv[3]);
     if(maxIters <=0) flag = 1;
   }
   
-  if(argc > 3) {
-    e = atof(argv[3]);
+  if(argc > 4) {
+    e = atof(argv[4]);
     if(e <= 0) flag = 2;
   }
 
-  if(argc > 4) {
-    d = atof(argv[4]);
+  if(argc > 5) {
+    d = atof(argv[5]);
     if(d <= 0) flag = 3;
   }
 
@@ -52,7 +52,7 @@ int runalgo(int argc,char** argv) {
 
   
   
-  graph* G = readGraph(argv[1]);
+  graph* G = readGraph(argv[1], argv[2]);
   if(G == NULL)
     flag = 4;
   

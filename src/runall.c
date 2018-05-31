@@ -17,7 +17,7 @@
 
 #include<unistd.h>
 
-#define NO_OF_ARGS 1
+#define NO_OF_ARGS 2
 
 // We define all additional paramemter here
 
@@ -29,7 +29,7 @@ void setAdditionalArguments() {
   /* conduct */
   /* pageRank */
   maxIters = 100;
-  e = 0.01;
+  e = 0.001;
   d = 0.95;
   /* sssp  */
   root =0;
@@ -41,48 +41,82 @@ void setAdditionalArguments() {
 
 
 void runcommunities(graph *G) {
-  initCommunities();
+  initCommunities(G);
+  
   struct timeval start, end;
   gettimeofday(&start, NULL);
   communities(G);
   gettimeofday(&end, NULL);
   printTiming(ALGO_KERNEL,((end.tv_sec - start.tv_sec)*1000 + ((double)(end.tv_usec - start.tv_usec))/1000));
+  outputCommunities(G);
   free(comm);
   comm = NULL;  
 }
 
 void runconduct(graph *G) {
   struct timeval start, end;
+  G_member = (int32_t*) malloc (G->numNodes * sizeof(int32_t));
+  srand(0);
+  #pragma parallel for 
+  for (int i = 0; i < G->numNodes; i++) 
+    G_member[i] = 0;
+  
+  for (int i = 0; i < G->numNodes; i++) {
+    int32_t r = rand() % 100;
+    if (r < 10)
+      G_member[i] = 0;  // 10%
+    else if (r < (10 + 20))
+      G_member[i] = 1;  // 20%
+    else if (r < (10 + 20 + 30))
+      G_member[i] = 2;  // 30%
+    else
+      G_member[i] = 3;  // 40%
+  }
   gettimeofday(&start, NULL);
   conduct(G);
   gettimeofday(&end, NULL);
+  free(G_member);
   printTiming(ALGO_KERNEL,((end.tv_sec - start.tv_sec)*1000 + ((double)(end.tv_usec - start.tv_usec))/1000));
+  outputConduct(G);
 }
 
+
 void runpageRank(graph *G) {
+  createReverseEdge(G);
+  pg_rank = (double*) malloc (G->numNodes * sizeof(double));
   struct timeval start, end;
   gettimeofday(&start, NULL);
-  runpageRank(G);
+  pageRank(G);
   gettimeofday(&end, NULL);
   printTiming(ALGO_KERNEL,((end.tv_sec - start.tv_sec)*1000 + ((double)(end.tv_usec - start.tv_usec))/1000));
+  outputPageRank(G);
+  free(G->r_begin);
+  G->r_begin = NULL;
+  free(G->r_node_idx);
+  G->r_node_idx = NULL;
+  G->reverseEdge = false;  
+  /* free(pg_rank);		/\* pg_rank freed inside output *\/ */
+  /* pg_rank = NULL; */
 }
 
 
 void runtriangleCounting(graph *G) {
   struct timeval start, end;
+  T = 0;
   gettimeofday(&start, NULL);
-  runtriangleCounting(G);
+  triangleCounting(G);
   gettimeofday(&end, NULL);
   printTiming(ALGO_KERNEL,((end.tv_sec - start.tv_sec)*1000 + ((double)(end.tv_usec - start.tv_usec))/1000));
-  
+  outputTriangleCounting(G);
 }
 
 
 void runsssp(graph *G) {
-  len = (uint32_t*) malloc (G->numEdges * sizeof(uint32_t));
   /*
     Random generation of edge lengths
    */
+  len = (uint32_t*) malloc (G->numEdges * sizeof(uint32_t));
+  assert(len != NULL);
   srand(ssspSeed);
   for(edge_t e = 0; e < G->numEdges; e++) {
     len[e] = (rand()%ssspMaxLength + 1);
@@ -90,10 +124,10 @@ void runsssp(graph *G) {
   dist = (uint32_t*) malloc (G->numNodes * sizeof (uint32_t));
   struct timeval start, end;
   gettimeofday(&start, NULL);
-  runsssp(G);
+  sssp(G);
   gettimeofday(&end, NULL);
   printTiming(ALGO_KERNEL,((end.tv_sec - start.tv_sec)*1000 + ((double)(end.tv_usec - start.tv_usec))/1000));
-  
+  outputsssp(G);
   free(len);
   free(dist);
   len = NULL;
@@ -125,27 +159,26 @@ void output(graph *G) {
 int runalgo(int argc,char** argv) {
 
   assert(argc >=2);
-  graph* G = readGraph(argv[1]);
+  graph* G = readGraph(argv[1], argv[2]);
   setAdditionalArguments();
   
 
   dist = (uint32_t*) malloc (G->numNodes * sizeof (uint32_t));
   assert(dist != NULL);
   
-  createReverseEdge(G);
   int i;
   for(i = 0;i< numTimes; i++) {
     printf("Run %d \n", i);
     runcommunities(G);
-    sleep(30);
+    sleep(5);
     runconduct(G);
-    sleep(30);
+    sleep(5);
     runpageRank(G);
-    sleep(30);
+    sleep(5);
     runsssp(G);
-    sleep(30);
+    sleep(5);
     runtriangleCounting(G);
-    sleep(30);
+    sleep(5);
     /* rename the prof files */
     char comm[50];
     sprintf(comm, "communities.%d.csv", i);
@@ -160,13 +193,13 @@ int runalgo(int argc,char** argv) {
     rename("pageRank.csv", page);
 
     char sssp[50];
-    sprintf(comm, "sssp.%d.csv", i);
+    sprintf(sssp, "sssp.%d.csv", i);
     rename("sssp.csv",sssp);
 
     char tri[50];
     sprintf(tri, "triangleCounting.%d.csv", i);
     rename("triangleCounting.csv", tri);
-    sleep(30);
+    sleep(5);
     
   }
   return 0;

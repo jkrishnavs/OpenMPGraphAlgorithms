@@ -9,6 +9,7 @@ void outputTriangleCounting(graph *G) {
 
 void triangleCounting(graph *G) {
   inittracking("triangleCounting.csv");
+  T = 0;
 #pragma omp parallel
   {
     int64_t T_private  = 0;

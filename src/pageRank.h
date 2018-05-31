@@ -1,4 +1,4 @@
-
+#include <math.h>
 double e;
 double d;
 int32_t maxIters;
@@ -16,8 +16,7 @@ void outputPageRank(graph *G) {
 
 void pageRank(graph* G) {
   inittracking("pageRank.csv");
-  float eprime = (float) e;
-  float diff = 0.0 ;
+  double diff = 0.0 ;
   int32_t cnt = 0 ;
   double N = 0.0 ;
   
@@ -32,12 +31,11 @@ void pageRank(graph* G) {
 
   do
     {
-      diff = ((float)(0.000000)) ;
+      diff = 0.0 ;
 #pragma omp parallel
       {
-	float diff_prv = 0.0 ;
+	double diff_prv = 0.0 ;
 	
-	diff_prv = ((float)(0.000000)) ;
 
 	
 #if defined(PARFOR_GUIDED)   
@@ -61,7 +59,7 @@ void pageRank(graph* G) {
 		  __S1 = __S1 + pg_rank[w] / ((double)((G->begin[w+1] - G->begin[w]))) ;
                 }
 	      val = (1 - d) / N + d * __S1 ;
-	      diff_prv = diff_prv +  abs((val - pg_rank[t]))  ;
+	      diff_prv = diff_prv +  fabs((val - pg_rank[t]))  ;
 	      pg_rank_nxt[t] = val ;
             }
 #pragma omp atomic
@@ -74,7 +72,9 @@ void pageRank(graph* G) {
 	}
       }
       cnt = cnt + 1 ;
-    } while ((diff > eprime) && (cnt < maxIters));
+    } while ((diff > e) && (cnt < maxIters));
+
+  printf("The number if iterations is %d \n",cnt);
 
   free(pg_rank_nxt);
   endtracking();
