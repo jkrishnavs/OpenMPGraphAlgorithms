@@ -56,7 +56,7 @@ void setaffinity() {
   int threadid = omp_get_thread_num();
   iters[threadid] = 0;
   int t = 0;
-#pragma omp for schedule(dynamic, CHUNKSIZE)
+#pragma omp for schedule(dynamic, PAR_CHUNKSIZE)
   for (node_t u1 = 0; u1 < G->numNodes; u1 ++) 
     for (edge_t j_idx = G->begin[u1];j_idx < G->begin[u1+1] ; j_idx ++) {
       iters[threadid]++;
@@ -238,8 +238,8 @@ int runalgo(int argc,char** argv) {
   graph* G = readGraph(argv[1], argv[2]);
   for(i = 0;i< numTimes; i++) {
     printf("Run %d \n", i);
-    /* updateElementinArray(G,i); */
-    /* sleep(2); */
+    updateElementinArray(G,i);
+    sleep(2);
     /* updateArrayPerIteration(G,i); */
     /* sleep(2); */
     /* updateMultipleArrayPerIteration(G,i); */
