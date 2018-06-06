@@ -4,6 +4,7 @@
  * edited by Jyothi Krishna V S.
  */
 
+#include<unistd.h>
 #include "graph.h"
 #include "mainFunctions.h"
 #include "print.h"
@@ -17,6 +18,8 @@ void output(graph *G) {
   outputPageRank(G);
 }
 
+
+#define numTimes 7
 
 /***
  * Common entry point for all algorithms,
@@ -55,18 +58,22 @@ int runalgo(int argc,char** argv) {
   graph* G = readGraph(argv[1], argv[2]);
   if(G == NULL)
     flag = 4;
-  
+  int i=0;
   pg_rank = (double*) malloc (G->numNodes * sizeof(double));
   assert(pg_rank != NULL);
   createReverseEdge(G);
-  runKernel(G);
-  output(G);
+  for(i=0;i<numTimes;i++) {
+    runKernel(G);
+    output(G);
+    char page[50];
+    sprintf(page, "pageRank.%d.csv", i);
+    rename("pageRank.csv", page);
+    sleep(5);
+  }
+  free(pg_rank);
+  pg_rank = NULL;
   return 0;
 }
-
-
-
-
 
 
 

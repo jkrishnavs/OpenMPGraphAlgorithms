@@ -4,6 +4,7 @@
  * edited by Jyothi Krishna V S.
  */
 
+#include<unistd.h>
 #include "graph.h"
 #include "mainFunctions.h"
 #include "powerperformacetracking.h"
@@ -27,6 +28,8 @@ void output(graph* G) {
   outputsssp(G);
 }
 
+
+#define numTimes 7
 
 /***
  * Common entry point for all algorithms,
@@ -65,6 +68,8 @@ int runalgo(int argc,char** argv) {
   
   
   graph* G = readGraph(argv[1], argv[2]);
+  // comment for final run.
+  assert(G->weights != NULL);
   if(G->weights == NULL) {
     G->weights = (int*) malloc (G->numEdges * sizeof(int));
     /*
@@ -78,8 +83,18 @@ int runalgo(int argc,char** argv) {
   }
   dist = (uint32_t*) malloc (G->numNodes * sizeof (uint32_t));
   assert(dist != NULL);
-  runKernel(G);
-  output(G);
+  int i;
+  for(i=0;i< numTimes;i++) {
+    runKernel(G);
+    output(G);
+    
+    char sssp[50];
+    sprintf(sssp, "sssp.%d.csv", i);
+    rename("sssp.csv",sssp);
+
+    sleep(5);
+  }
+  free(dist);
   return 0;
 }
 

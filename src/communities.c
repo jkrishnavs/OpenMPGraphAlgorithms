@@ -4,6 +4,7 @@
  * edited by Jyothi Krishna V S.
  */
 
+#include<unistd.h>
 #include "graph.h"
 #include "mainFunctions.h"
 #include "print.h"
@@ -22,6 +23,7 @@ void output(graph *G) {
   outputCommunities(G);
 }
 
+#define numTimes 7
 
 /***
  * Common entry point for all algorithms,
@@ -34,7 +36,7 @@ int runalgo(int argc,char** argv) {
     maxItrs = atoi(argv[3]);
     if(maxItrs <=0) flag = 1;
   }
-
+  //graph* G = NULL;
   graph* G = readGraph(argv[1], argv[2]);
 
   if(G == NULL) {
@@ -45,15 +47,19 @@ int runalgo(int argc,char** argv) {
     const char* argList[NO_OF_ARGS] = {" <inputfile> " , "[max_iterations = 10]"};
     printError(INCORRECT_ARG_LIST, NO_OF_ARGS, argList);
     return -1;
+  }  
+  int i;
+  for(i=0;i< numTimes;i++){
+    initCommunities(G);
+    runKernel(G);
+    output(G);
+    char comm[50];
+    sprintf(comm, "communities.%d.csv", i);
+    rename("communities.csv", comm);
+    sleep(5);
   }
-  
-  initCommunities(G);
-  runKernel(G);
-  output(G);
   return 0;
 }
-
-
 
 
 

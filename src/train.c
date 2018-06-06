@@ -11,7 +11,8 @@
 
 #define NO_OF_ARGS 2
 
-#define REPEAT 50
+//#define REPEAT 25
+#define REPEAT 20
 
 long long iters[8];
 
@@ -226,7 +227,7 @@ free(G_member);
 /* } */
 
 
-#define numTimes 5
+#define numTimes 3
 
 /***
  * Common entry point for all algorithms,
@@ -239,7 +240,7 @@ int runalgo(int argc,char** argv) {
   for(i = 0;i< numTimes; i++) {
     printf("Run %d \n", i);
     updateElementinArray(G,i);
-    sleep(2);
+    sleep(1);
     /* updateArrayPerIteration(G,i); */
     /* sleep(2); */
     /* updateMultipleArrayPerIteration(G,i); */

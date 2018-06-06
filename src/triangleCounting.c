@@ -4,6 +4,7 @@
  * edited by Jyothi Krishna V S.
  */
 
+#include <unistd.h>
 #include "graph.h"
 #include "mainFunctions.h"
 #include "print.h"
@@ -21,6 +22,9 @@ void output(graph *G) {
 }
 
 
+#define numTimes 7
+
+
 
 /***
  * Common entry point for all algorithms,
@@ -32,8 +36,15 @@ int runalgo(int argc,char** argv) {
     return -1;
   }
   graph* G = readGraph(argv[1], argv[2]);
-  runKernel(G);
-  output(G);
+  int i;
+  for(i=0;i<numTimes;i++) {
+    runKernel(G);
+    output(G);
+    char tri[50];
+    sprintf(tri, "triangleCounting.%d.csv", i);
+    rename("triangleCounting.csv", tri);
+    sleep(5);
+  }
   return 0;
 }
 

@@ -64,6 +64,9 @@ endif
 dynamicwithchunkSize:
 	$(CC) -D $(CAPABILITY) $(ONLINECORESFLAG) $(INC) $(LDFLAGS) $(DYNAMICFL) $(TARGET) $(EM) -o $(BIN)/$(basename $(notdir $(TARGET)))_dynamic_$(CHUNKSIZE) 
 
+dynamicwithchunkSizedebug:
+	$(CC) -g -D $(CAPABILITY) $(ONLINECORESFLAG) $(INC) $(LDFLAGS) $(DYNAMICFL) $(TARGET) $(EM) -o $(BIN)/$(basename $(notdir $(TARGET)))_dynamic_$(CHUNKSIZE) 
+
 
 # ifeq ($(TASKLOOP_DEFINED), yes )
 # $(DEBUGS):
