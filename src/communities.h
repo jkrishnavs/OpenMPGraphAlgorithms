@@ -118,6 +118,6 @@ void communities(graph* G) {
       itrs++;
     } while ( !finished && maxItrs > itrs);
   
-  
+  printf( "Iterations %d \n", itrs);
   endtracking();
 }

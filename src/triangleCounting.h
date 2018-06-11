@@ -32,9 +32,14 @@ void triangleCounting(graph *G) {
 	  for (w_idx = G->begin[v]; w_idx < G->begin[v+1]; w_idx ++) {
 	    node_t w = G->node_idx [w_idx];
 	    if (w > u) {
-	      if (isNeighbour(G,w,u)) {
-		T_private = T_private + 1 ;
-	      }
+	      edge_t s;
+              for(s= G->begin[w]; s < G->begin[w+1]; s++) {
+		node_t y = G->node_idx[s];
+		if(y == u) {
+                  T_private = T_private + 1 ;
+		  break;
+		}
+              }
 	    }
 	  }
 	}

@@ -59,10 +59,10 @@ int runalgo(int argc,char** argv) {
   if(G == NULL)
     flag = 4;
   int i=0;
-  pg_rank = (double*) malloc (G->numNodes * sizeof(double));
-  assert(pg_rank != NULL);
   createReverseEdge(G);
   for(i=0;i<numTimes;i++) {
+    pg_rank = (double*) malloc (G->numNodes * sizeof(double));
+    assert(pg_rank != NULL);
     runKernel(G);
     output(G);
     char page[50];
@@ -70,7 +70,7 @@ int runalgo(int argc,char** argv) {
     rename("pageRank.csv", page);
     sleep(5);
   }
-  free(pg_rank);
+  //free(pg_rank);
   pg_rank = NULL;
   return 0;
 }
