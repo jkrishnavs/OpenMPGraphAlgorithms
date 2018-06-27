@@ -1,15 +1,21 @@
+#include<stdlib.h>
 #include "graph.h"
 #include "mainFunctions.h"
 #include "print.h"
-#include "powerperformacetracking.h"
-#include "communities.h"
+//#include "powerperformacetracking.h"
+//#include "communities.h"
 #include "graphprop.h"
+#include "nodeIntMap.h"
+
+
+#define DEBUG_ON
 
 
 
 int adj = 0; // 1 for reverse adjlist or 0 in adjlist.
 bool skewed  =  false;
 
+node_t* comm = NULL;
 
 typedef struct graphmap {
   node_t comm;
@@ -18,13 +24,23 @@ typedef struct graphmap {
 } graphmap;
 
 
-typedef struct CommunityDetails {
+typedef struct ClusterDetails {
   int id;
   int numNodes;
   int numEdges;
   int external;
   int commDistance;
-} CommunityDetails;
+  //  node_t* nodeList;
+} ClusterDetails;
+
+inline void CopyClusterDetails(ClusterDetails* cd,int src, int dest) {
+  cd[dest].id = cd[src].id;
+  cd[dest].numNodes = cd[src].numNodes;
+  cd[dest].numEdges = cd[src].numEdges;
+  cd[dest].external = cd[src].external;
+  cd[dest].commDistance = cd[src].commDistance;  
+}
+
 
 
 graph* createPreprocessedGraph(graph *G, graphmap * gm) {
@@ -37,7 +53,9 @@ graph* createPreprocessedGraph(graph *G, graphmap * gm) {
   newG->numNodes = G->numNodes;
   newG->numEdges = G->numEdges;
   newG->begin = (edge_t*) malloc (sizeof(edge_t) * (newG->numNodes+1));
+#ifdef DEBUG_ON
   assert(newG->begin != NULL);
+#endif
   newG->node_idx = (node_t*) malloc(sizeof(node_t) * newG->numEdges);
   edge_t edgepos = 0;
   newG->begin[0] = 0;
@@ -82,11 +100,15 @@ graph* createPreprocessedGraph(graph *G, graphmap * gm) {
    If we can somehow find that node (if present, possibly it will the 
    community ID TODO VERIFY AND OPTIMIZE THIS), the we can get away with creating the stacklist
    and commlist and directly use the G and comm to create the consolidated list.
+commlist = nodes in community
+stacklist =  stack 
+visited = visited list
+commid community id
  */
-void * partialBFS(graph * G, node_t* commlist , node_t* stacklist, int* visited,  node_t* comm, int commSize, node_t commId) {
+void * topologicalSort(graph * G, node_t* commlist , node_t* stacklist, int* visited,  node_t* comm, node_t* commpos, int commSize, node_t commId) {
     int sortedSize = 0;
     stacklist[sortedSize] = commlist[0];
-    visited[commlist[0]] = 1;
+    visited[0] = 1;
     sortedSize++;
     int curIndex = 0;
     node_t source;
@@ -94,9 +116,9 @@ void * partialBFS(graph * G, node_t* commlist , node_t* stacklist, int* visited,
     while(sortedSize < commSize) {
       if(curIndex == sortedSize) {
 	for(int i =1; i< commSize; i++ ) {
-	  if(visited[commlist[i]] == 0) {
+	  if(visited[commpos[commlist[i]]] == 0) {
 	    stacklist[sortedSize] = commlist[i];
-	    visited[commlist[i]] = 1;
+	    visited[commpos[commlist[i]]] = 1;
       	    sortedSize++;
 	    break;
 	  }
@@ -107,9 +129,9 @@ void * partialBFS(graph * G, node_t* commlist , node_t* stacklist, int* visited,
       curIndex++;
       for(edge_t e = G->begin[source]; e < G->begin[source+1]; e++) {
 	node_t d = G->node_idx[e];
-	if(comm[d] == commId && visited[d] == 0) {
+	if(comm[d] == commId && visited[commpos[d]] == 0) {
 	  stacklist[sortedSize] = d;
-	  visited[d] = 1;
+	  visited[commpos[d]] = 1;
 	  sortedSize++;
 	}
       }
@@ -125,6 +147,106 @@ void dumpmapping(graph *G, graphmap*  gm,const char * filename) {
     fprintf(fp, "%d\t%d\n", i, gm[i].newPos);
   }
 }
+
+
+
+void initCommunities(graph *G) {
+  
+  comm = (node_t*) malloc (G->numNodes * sizeof(node_t));
+  assert(comm != NULL);
+
+}
+
+double* coeff;
+
+#define cohval(index,arr) arr[index]
+
+void merge_serial(node_t* index,  double* vals, node_t start, node_t mid, node_t end) {
+  node_t t1 = start;
+  node_t t2 = mid;
+  node_t temp;
+  while(t1 < mid) {
+    if(cohval(index[t1], vals) < cohval(index[t2], vals)) {
+      // swap ?
+      temp = index[t1];
+      index[t1] = index[t2];
+      index[t2] = temp;
+    }
+    t1++;
+  }  
+}
+void merge_parallel(node_t* index1,  double* vals, node_t start, node_t mid, node_t end) {
+  // TODO
+}
+void sort_selection(node_t* index, double* vals, node_t start, node_t end) {
+  node_t sindex;
+  for(node_t i = start; i< end-1; i++) {
+    sindex = i;
+    double coh = cohval(index[i], vals);
+    for(node_t j = start+1; j<end; j++) {
+      double coj = cohval(index[j], vals);
+      if(coj > coh) {
+	sindex = j;
+	coh = coj;
+      }
+    }
+    node_t temp = index[i];
+    index[i] = index[sindex];
+    index[sindex] = temp;
+  }
+}
+
+
+void sort_serial(node_t* index, double* vals, node_t start, node_t end) {
+  if((end-start) < 1024) {
+    sort_selection(index, vals, start, end);
+  } else {
+    node_t midpoint = (start+end)/2;
+    sort_serial(index, vals, start, midpoint);
+    sort_serial(index, vals, midpoint, end);
+    merge_serial(index, vals, start, midpoint, end);
+  }
+}
+
+void sort_parallel(node_t* index, double* vals, node_t start, node_t end) {
+
+  if(end - start < 8192) {
+    sort_serial(index, vals, start, end);
+  }
+  else {
+/* #pragma omp parallel */
+/*     { */
+#pragma omp task 
+      sort_parallel(index, vals, start , (start+end)/2);
+#pragma omp task 
+      sort_parallel(index, vals, (start+end)/2 , end);
+#pragma omp taskwait
+      merge_serial(index, vals, start, (start+end)/2, end);
+    /* } */
+  }
+}
+
+void sort(node_t* index, double* vals, node_t start, node_t end) {
+  if((end - start) < 8192) {
+    sort_serial(index, vals,start,end);
+  } else {
+#pragma omp parallel
+    {
+      sort_parallel(index, vals, start, end);
+    }
+  }
+}
+
+/* int comp (const void * elem1, const void * elem2) { */
+/*   double f = coeff[*((int*)elem1)]; */
+/*   double s = coeff[*((int*)elem2)]; */
+/*   if (f > s) return -1; */
+/*   if (f < s) return 1; */
+/*   return 0;   */
+/* } */
+
+
+
 
 
 graph* preprocess(graph* G, const char* mapfile) {
@@ -184,7 +306,7 @@ graph* preprocess(graph* G, const char* mapfile) {
 	for (x0 = 0; x0 < G->numNodes; x0 ++) {
 	  /* We classify only nodes with more than one edge.
 	     The non classified nodes will be pused to last. */
-	  if((G->begin[x0+1] - G->begin[x0]) > 1) {
+	  //if((G->begin[x0+1] - G->begin[x0]) > 1) {
 	    map = reinitNodeIntMap(map, G->begin[x0+1] - G->begin[x0], 0);
 	    for (edge_t y_idx = G->begin[x0];y_idx < G->begin[x0+1] ; y_idx ++) {
 	      node_t y = G->node_idx [y_idx];
@@ -198,7 +320,7 @@ graph* preprocess(graph* G, const char* mapfile) {
 	      comm[x0] = maxVal;
 	      finished = false ;
 	    }
-	  }
+	    //}
 	  
 	}
 	closeNodeIntMap(map);
@@ -210,9 +332,12 @@ graph* preprocess(graph* G, const char* mapfile) {
 
   
   printf("Community detection The required time is %f \n",((end.tv_sec - start.tv_sec)*1000 + ((double)(end.tv_usec - start.tv_usec))/1000));
+  gettimeofday(&start, NULL);
   
-  CommunityDetails* cd = (CommunityDetails*) malloc (G->numNodes * sizeof(CommunityDetails));
+  ClusterDetails* cd = (ClusterDetails*) malloc (G->numNodes * sizeof(ClusterDetails));
   graphmap* gm = (graphmap*) malloc (G->numNodes * sizeof(graphmap));
+
+
 #pragma omp parallel for
   for(node_t i=0; i<G->numNodes; i++ ) {
     gm[i].newPos = NIL_NODE;
@@ -220,146 +345,194 @@ graph* preprocess(graph* G, const char* mapfile) {
     cd[i].numNodes = 0;
     cd[i].numEdges = 0;
     cd[i].external = 0;
-    cd[i].id = (int)NIL_NODE;
+    cd[i].id = i;
+    //cd[i].nodeList = NULL;
   }
 
 
-  /* Number of communities */
-  node_t noofComm = 0;
-  gettimeofday(&start, NULL);
+  /* Position of the node in the community */
+  node_t *commpos = (node_t*) malloc (G->numNodes * sizeof(node_t));
+  
+#ifdef DEBUG_ON
+  printf("Start the data collection process \n");
+  /**
+   * IMPORTANT: There is a high probability that in the input graph
+   * the adject nodes are in the same cluster.
+   * As a result, we first compare the previous nodes's 
+   * cluster ID.
+   **/
+  
+#endif
+
   for(node_t i=0; i< G->numNodes; i++) {
     node_t comid = comm[i];
-    node_t index = NIL_NODE;
-    for(node_t j =0; j <noofComm; j++) {
-      if(cd[j].id == comid) {
-	index = j;
-	cd[index].numNodes++;
-	break;
-      }
-    }
-    if(index == NIL_NODE) {
-      index = noofComm; 
-      cd[index].id = comid;
-      cd[index].numNodes = 1;
-      noofComm++;
-    }
+    commpos[i] = cd[comid].numNodes;
+    cd[comid].numNodes++;
     for(edge_t e = G->begin[i]; e < G->begin[i+1]; e++) {
       node_t end = G->node_idx[e];
       if(comm[end] == comid)
-	cd[index].numEdges++;
+	cd[comid].numEdges++;
       else
-	cd[index].external++;
+	cd[comid].external++;
     }
   }
+  
+/* number of communities */
+ node_t noofComm = 0;
+ for(node_t i=0; i< G->numNodes; i++) {
+   if(cd[i].numNodes > 0) {
+     if(noofComm < i) {
+       CopyClusterDetails(cd, i, noofComm);
+     }
+#ifdef DEBUG_ON
+     assert(cd[i].numNodes == cd[noofComm].numNodes);
+     //     printf("The node id %d numNodes %d  i val is %d and i numNodes is %d \n", noofComm, cd[noofComm].numNodes, i , cd[i].numNodes);
+     assert(cd[i].numNodes > 0);
+     // exit(0);
+#endif
+     noofComm++;     
+   }
+ }
+  
 
+#ifdef DEBUG_ON
+  printf("The number of clusters is %d \n ", noofComm);
+  /* for(node_t debclusters = 0; debclusters < noofComm; debclusters++) { */
+  /*   printf("The cluster id is %d and number of nodes in cluster is %d \n", cd[debclusters].id, cd[debclusters].numNodes); */
+  /* } */
+#endif
+
+  
 
   gettimeofday(&end, NULL);
   printf("data collection The required time is %f \n",((end.tv_sec - start.tv_sec)*1000 + ((double)(end.tv_usec - start.tv_usec))/1000));
     
 
-  /* The community with highest diffrenece between internal nodes 
+  /* 
+     The community with highest diffrenece between internal nodes 
      and external nodes per node 
-    will be psuhed to start.
+     will be psuhed to start.
     */
-
   gettimeofday(&start, NULL);
-  
-  for(node_t i=0; i< noofComm -1; i++) {
-    for(node_t j= i+1; j < noofComm; j++) {
-      double coh = ((double)cd[i].numEdges)/cd[i].numNodes;
-      double coj = ((double)cd[j].numEdges)/cd[j].numNodes;
-      if(coj > coh) {
-	/* exchage the nodes */
-	CommunityDetails temp;
-	memcpy(&temp, &cd[i], sizeof(CommunityDetails));
-	memcpy(&cd[i], &cd[j], sizeof(CommunityDetails));
-	memcpy(&cd[j], &temp, sizeof(CommunityDetails));	
-      }
-    }
-  }
 
+  /*community positions*/
+  int* commDetPointers  = (int*) malloc (noofComm * sizeof(int));
+  coeff = (double*) malloc (noofComm * sizeof(double));
+  
+
+#pragma omp parallel for
+  for(node_t i=0; i < noofComm; i++) {
+#ifdef DEBUG_ON
+    // printf("The node id %d numNodes %d \n",i , cd[i].numNodes);
+    assert(cd[i].numNodes > 0);
+#endif
+    commDetPointers[i] = i;
+    coeff[i] = ((double)cd[i].numEdges)/cd[i].numNodes;
+  }
+  
+  sort_serial(commDetPointers, coeff, 0, noofComm);
+  free(coeff);
   gettimeofday(&end, NULL);
   printf("sorting The required time is %f \n",((end.tv_sec - start.tv_sec)*1000 + ((double)(end.tv_usec - start.tv_usec))/1000));
   /* Decide on destinations  */
-
-  node_t * commlist = (node_t*) malloc (cd[0].numNodes * sizeof(node_t));
-  node_t* stacklist = (node_t*) malloc (cd[0].numNodes * sizeof(node_t));
-
-  
-  int * visitedlist = (int*) malloc (G->numNodes * sizeof(int));
-
-  node_t commStart = 0; 	/* These are the start and end indexes of graph Map */
-  node_t commEnd = 0;
-
-  node_t commMax = cd[0].numNodes;
-
-
   gettimeofday(&start, NULL);
-
-  for(node_t c = 0;c < noofComm; c++) {
-    node_t commSize = cd[c].numNodes;
-    //    printf("The community Size is %d internal edges %d \n", commSize, cd[c].numEdges);
-    node_t commId = cd[c].id;
-    if(commSize > commMax) {
-      commlist = (node_t*) realloc(commlist, commSize * sizeof(node_t));
-      stacklist = (node_t*) realloc(stacklist, commSize * sizeof(node_t));
-
-      commMax = commSize;
-    }
-    
-    node_t t = 0;
-    /* Get all nodes in the community */
-    for(node_t i =0; i< G->numNodes; i++) {
-      if(comm[i] == commId) {
-	commlist[t] = i;
-	t++;
-      }
-    }
-
-    if(t != commSize) {
-      printf("The values is %d %d \n", t, commSize);
-      // set visited to 0;
-    }
-    assert(t == commSize);
-
-
-    if(commSize > 3) {
-      memset(visitedlist, 0, G->numNodes *sizeof(int));
-      // BFS
-      partialBFS(G, commlist, stacklist, visitedlist, comm, commSize, commId);
-
-      /* TODO
-	 Do a BFS after reversing the list.
-      */
-
-      /* We might not require this exchange after the TODO */
-      node_t* temp = commlist;
-      commlist = stacklist;
-      stacklist = temp;
-	
-      /* memset(visitedlist, 0, G->numNodes *sizeof(int)); */
-      /* partialBFS(G, stacklist, commlist, visitedlist, commSize, commId); */
-    }
-      /*  The order is set in commlist */
-    for(node_t i =0;i < commSize; i++){
-      assert(gm[commStart +  i].revPos == NIL_NODE);
-      assert(gm[commlist[i]].newPos == NIL_NODE);
-      gm[commStart +  i].revPos = commlist[i];
-      gm[commlist[i]].newPos = commStart + i;
-    }
-    commStart += commSize; 
+  node_t commEnd = 0;
+  node_t commStart = 0; 	/* These are the start and end indexes of graph Map */  
+  for(node_t c =0; c<noofComm; c++) {
+    node_t cid = commDetPointers[c];
+    cd[cid].commDistance = commStart;
+    assert(cd[cid].numNodes > 0);
+    commStart += cd[cid].numNodes;
   }
-  
-  
-  gettimeofday(&end, NULL);
-  printf("Internal sorting the required time is %f \n",((end.tv_sec - start.tv_sec)*1000 + ((double)(end.tv_usec - start.tv_usec))/1000));
-
   assert(commStart == G->numNodes);
 
-  free(stacklist);
-  free(commlist);
-  free(visitedlist);
+  /** Collect the nodes of a cluster together **/
+  node_t* clusterednodes = (node_t*) malloc (G->numNodes * sizeof(node_t));
+  node_t* clusterPositions = (node_t*) malloc (G->numNodes * sizeof(node_t));
+#pragma omp parallel for
+  for(node_t c=0; c< noofComm;c++) {
+    clusterPositions[cd[c].id] = c;
+  }
+#ifdef DEBUG_ON
+#pragma omp parallel for
+  for(node_t i =0;i< G->numNodes;i++) {
+    clusterednodes[i] = NIL_NODE;
+  }
+  for(node_t c; c< noofComm; c++) {
+    assert(clusterPositions[cd[c].id] == c); 
+  }
+#endif  
+  for(node_t i =0;i< G->numNodes;i++) {
+    node_t nodeCluster = comm[i];
+    node_t clusterPos = clusterPositions[nodeCluster];
+    node_t nodePos = cd[clusterPos].commDistance + commpos[i];
+#ifdef DEBUG_ON
+    //    printf("The node id %d community id %d (%d), community start is %d nodePos =  %d clusterednode %d \n",i,comm[i], cd[clusterPos].id, cd[clusterPos].commDistance, nodePos, clusterednodes[nodePos]);
+    assert(cd[clusterPos].id == comm[i]);
+    assert(clusterednodes[nodePos] == NIL_NODE);
+#endif
+    clusterednodes[nodePos] = i;
+  }
 
+  free(clusterPositions);
+  
+  
+#pragma omp parallel
+  {
+    int* visitedlist = (int*) malloc (cd[0].numNodes * sizeof(int));
+    node_t * commlist = (node_t*) malloc (cd[0].numNodes * sizeof(node_t));  
+    node_t* stacklist = (node_t*) malloc (cd[0].numNodes * sizeof(node_t));
+    node_t commMax = cd[0].numNodes;
+
+#pragma omp for
+    for(node_t c = 0; c< noofComm; c++) {
+      node_t cid = commDetPointers[c];
+      node_t myCommunitySize = cd[cid].numNodes;
+      node_t commId = cd[cid].id;
+      node_t myStart = cd[cid].commDistance;
+      if(myCommunitySize > commMax) {
+	commlist = (node_t*) realloc(commlist, myCommunitySize * sizeof(node_t));
+	stacklist = (node_t*) realloc(stacklist, myCommunitySize * sizeof(node_t));
+	visitedlist = (int*) realloc(visitedlist , myCommunitySize * sizeof(int));
+	commMax = myCommunitySize;
+      }
+      for(node_t i = 0; i< myCommunitySize; i++) {
+	commlist[i] = clusterednodes[i+ myStart];
+#ifdef DEBUG_ON
+	assert(comm[commlist[i]]  == commId);
+#endif
+      }
+      /*************************** TODO *************************************/
+      if(myCommunitySize > 3) {
+	memset(visitedlist, 0,myCommunitySize  * sizeof(int));
+	// BFS
+	topologicalSort(G, commlist, stacklist, visitedlist, comm, commpos, myCommunitySize, commId);
+	/* TODO	   Do a BFS after reversing the list.	*/
+	/* We might not require this exchange after the TODO */
+	node_t* temp = commlist;
+	commlist = stacklist;
+	stacklist = temp;
+      }
+      /*  The order is set in commlist */
+      for(node_t i =0;i < myCommunitySize; i++){
+	assert(gm[myStart +  i].revPos == NIL_NODE);
+	assert(gm[commlist[i]].newPos == NIL_NODE);
+	gm[myStart +  i].revPos = commlist[i];
+	gm[commlist[i]].newPos = myStart + i;
+      }
+    }
+    free(stacklist);
+    free(commlist);
+    free(visitedlist);
+  }
+  free(comm);
+  free(commpos);
+  free(cd);
+  free(commDetPointers);
+  free(clusterednodes);
+
+  gettimeofday(&end, NULL);
+  printf("Internal sorting the required time is %f \n",((end.tv_sec - start.tv_sec)*1000 + ((double)(end.tv_usec - start.tv_usec))/1000));
 
   gettimeofday(&start, NULL);
   graph* newG = createPreprocessedGraph(G, gm);
@@ -378,10 +551,8 @@ graph* preprocess(graph* G, const char* mapfile) {
     newG->node_idx = r_node_idx;
   }
   
-  free(cd);
-  free(comm);
-  dumpmapping(G, gm, mapfile);
 
+  dumpmapping(G, gm, mapfile);
 
   /*now update edgeWeights in newG*/
   if(G->weights != NULL) {
