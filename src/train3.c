@@ -67,7 +67,7 @@ void MultipleArrayParsePerIteration(graph *G, int id) {
 	  for (edge_t k_idx = G->begin[u1];k_idx < G->begin[u1+1] ; k_idx ++) {
 	    node_t k = G_member[j];
             if(k > j) {
-	      for (edge_t k_idx = G->begin[k];k_idx < G->begin[k+1] ; k_idx ++) {
+	      for (edge_t l_idx = G->begin[k];l_idx < G->begin[k+1] ; l_idx ++) {
 		t++;
 	      }
 	    }

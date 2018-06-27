@@ -42,7 +42,7 @@ void trainaed(graph* G, int id) {
     {
       double d = 0.0;
       int final = 0;
-#pragma omp parallel for schedule(dynamic,1024)
+#pragma omp for schedule(dynamic,1024)
       for (node_t t = 0; t < G->numNodes; t ++) 
 	{
 	  for (edge_t w_idx = G->begin[t];w_idx < G->begin[t+1] ; w_idx ++) 
