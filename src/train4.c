@@ -49,34 +49,38 @@ void updateatomicadd(graph *G, int id) {
   
   int pf = 0;
 
-  for(int abc=0; abc < REPEAT; abc ++) {
 
 #pragma omp parallel
     {
       int flag;
 #pragma omp for schedule(dynamic, 1024)
-      for (node_t u1 = 0; u1 < G->numNodes; u1 ++)
-	for (edge_t u_idx = G->begin[u1];u_idx < G->begin[u1+1] ; u_idx ++) {
+      for (node_t u1 = 0; u1 < G->numNodes; u1 ++) {
+	if(u1%2 == 0){
+	  for (edge_t u_idx = G->begin[u1];u_idx < G->begin[u1+1] ; u_idx ++) {
             node_t u = G->node_idx [u_idx];
-	    for (edge_t w_idx = G->begin[u];w_idx < G->begin[u+1] ; w_idx ++) {
-	      node_t w = G->node_idx [w_idx];
-	      flag = 0;
-	      if ((w != u) && (w != u1)) {
-		for(edge_t s = G->begin[u1]; s < G->begin[u1+1]; s++) {
-		  node_t y = G->node_idx[s];
-		  if(y == w) {
-		    flag = 1;
+	    if(u1%4 == 0) {
+	      for (edge_t w_idx = G->begin[u];w_idx < G->begin[u+1] ; w_idx ++) {
+		node_t w = G->node_idx [w_idx];
+		flag = 0;
+		if (u1%8 == 0) {
+		  for(edge_t s = G->begin[u1]; s < G->begin[u1+1]; s++) {
+		    node_t y = G->node_idx[s];
+		    if(y == w) {
+		      flag = 1;
+		    }
 		  }
 		}
 	      }
 	    }
-	    if(flag ==0){
-#pragma omp atomic
-	      pf++;
-	    }	  
+	  }
 	}
+	if(u1%2 == 0) {
+#pragma omp atomic
+	  pf++;
+	}
+      }	  
     }
-  }
+    
   endtracking();
   gettimeofday(&end, NULL);
 

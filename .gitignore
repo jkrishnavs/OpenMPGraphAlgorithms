@@ -1,6 +1,6 @@
+/traindata/*
 *.sh
 /testresult/*
-/communities/*
 *~
 #*
 .#*
