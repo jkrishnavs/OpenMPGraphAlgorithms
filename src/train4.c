@@ -12,7 +12,7 @@
 #define NO_OF_ARGS 2
 
 //#define REPEAT 25
-#define REPEAT 25
+#define REPEAT 4
 
 long long iters[8];
 
@@ -49,7 +49,8 @@ void updateatomicadd(graph *G, int id) {
   
   int pf = 0;
 
-
+  int abc;
+  for(abc =0;  abc< REPEAT; abc++) {
 #pragma omp parallel
     {
       int flag;
@@ -71,15 +72,16 @@ void updateatomicadd(graph *G, int id) {
 		  }
 		}
 	      }
+	      if(u_idx%2 == 0) {
+#pragma omp atomic
+		pf++;
+	      }
 	    }
 	  }
 	}
-	if(u1%2 == 0) {
-#pragma omp atomic
-	  pf++;
-	}
       }	  
     }
+  }
     
   endtracking();
   gettimeofday(&end, NULL);
