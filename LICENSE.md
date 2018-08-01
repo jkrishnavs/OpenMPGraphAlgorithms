@@ -1,6 +1,6 @@
 MIT License
 
-Copyright (c) 2018 Jyothi Krishna V S, Rupesh Nasre, Shankar Balachnadran, IIT Madras
+Copyright (c) 2018 Jyothi Krishna V S, Rupesh Nasre, IIT Madras
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
