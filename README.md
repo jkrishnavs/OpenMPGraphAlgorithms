@@ -14,6 +14,7 @@ i. addEdgeWeights: Add random edge weights to an unweighted directed graph to ou
 ii. preprocess: Preprocess the input graph to generate an isomer optimized for cache performance.   
 iii. graphequivalence: given tow isomers and a vertex map verifies the equivalance of the two graphs.    
 iv. graphprop: Extracts the graph properties from the input graph.   
+v. train\*#\*.c: Some random graph kernels.
 
 
 
