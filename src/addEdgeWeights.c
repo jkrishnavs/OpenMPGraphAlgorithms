@@ -11,7 +11,7 @@
 #include <time.h>
 #include <stdlib.h>
 
-#define NO_OF_ARGS 3
+#define NO_OF_ARGS 5
 
 typedef struct graphmap{
   node_t orig;
@@ -46,6 +46,12 @@ graph* addweights(graph *G) {
  * Common entry point for all algorithms,
  **/
 int runalgo(int argc,char** argv) {
+  if(argc > 4) {
+    maxLength = atoi(argv[4]);
+  }
+  if(argc > 5) {
+    seed = atoi(argv[5]);	
+  }
   graph* G = readGraph(argv[1], argv[2]);
   graph* newG = addweights(G);
   writeGraph(newG, argv[3]);
