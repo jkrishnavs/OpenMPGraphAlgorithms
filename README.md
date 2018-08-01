@@ -1,25 +1,19 @@
 # 1.Introduction
 
 Realization of popular Graph Algorithms using C and OpenMP.
-The base algorithms are taken from GreenMarl[1] example algorithms. Apart from these we have also created a few utility graph algorithms
-
-
-
-
-
-
+The base algorithms are taken from GreenMarl[1] example algorithms. Apart from these we have also created a few utility graph algorithms  
 
 # 2. Algorithm Details
-i. communities
-ii. conduct
-iii. pagerank
-iv. sssp
+i. communities  
+ii. conduct  
+iii. pagerank  
+iv. sssp  
 v. triangle_counting  
--- Utility Algorithms --   
-i. addEdgeWeights: Add random edge weights to an unweighted directed graph to output a weighted directed graph. maxLength(Default value 100) and random seed (Default value 0) can be given as user inputs.
-ii. preprocess: Preprocess the input graph to generate an isomer optimized for cache performance. 
-iii. graphequivalence: given tow isomers and a vertex map verifies the equivalance of the two graphs.  
-iv. graphprop: Extracts the graph properties from the input graph. 
+**Utility Algorithms**     
+i. addEdgeWeights: Add random edge weights to an unweighted directed graph to output a weighted directed graph. maxLength(Default value 100) and random seed (Default value 0) can be given as user inputs.  
+ii. preprocess: Preprocess the input graph to generate an isomer optimized for cache performance.   
+iii. graphequivalence: given tow isomers and a vertex map verifies the equivalance of the two graphs.    
+iv. graphprop: Extracts the graph properties from the input graph.   
 
 
 
