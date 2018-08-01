@@ -81,7 +81,7 @@ See GMLICENCE for GreenMarl Licence. See LICENCE.md for our licence.
 # 6.References
 [1] https://github.com/stanford-ppl/Green-Marl  
 [2] https://snap.stanford.edu/data/  
-[3] SNAP: A General-Purpose Network Analysis and Graph-Mining Library
+[3] SNAP: A General-Purpose Network Analysis and Graph-Mining Library  
 [4] https://github.com/jkrishnavs/Energymonitorlibrary
 # 7. Contact
 1. Jyothi Krishna V S, IIT Madras (jkrishna@cse.iitm.ac.in)
