@@ -6,10 +6,11 @@
 #include "mainFunctions.h"
 #include "print.h"
 #include "powerperformacetracking.h"
+#include "graphprop.h"
 
-
-
-
+Graph *G;
+void randomGenerator();
+void erdosEenyiGenerator();
 typedef enum GraphModel {
   Random,
   ErdosRenyi,
@@ -88,9 +89,8 @@ void updateConfigs(const char* configfile) {
     printError(CONFIG_FILE_NOT_FOUND, 0, NULL);
     return NULL;
   }
-
+ 
 }
-
 
 
 
@@ -101,8 +101,9 @@ int runalgo(int argc, char** argv) {
     printError(INCORRECT_ARG_LIST, NO_OF_ARGS, argList);
     return -1;
   }
-
-  
-  
+  updateConfigs(configfile);
+  callappropriategenerator();
+  assert(G != NULL);
+  writeBackGraph(G, argv[2]);
   
 }
