@@ -70,6 +70,10 @@ void equivalance(graph *G, graph *newG, graphmap *gm) {
  * Common entry point for all algorithms,
  **/
 int runalgo(int argc,char** argv) {
+  if(argc < 5) {
+    const char* argList[4] = {"<inputfile1>" , "<graphformat>","<inputfile2>", "<graphmapfile>"};
+    printError()
+  }
   graph* G = readGraph(argv[1], argv[2]);
   graph* newG = readGraph(argv[3], argv[2]);
   graphmap* gm = (graphmap*) malloc (G->numNodes * sizeof(graphmap));

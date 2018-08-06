@@ -1,6 +1,6 @@
 /**
  * Original base algorithm from GreenMarl.
- * Otimized and edited by
+ * Optimized and edited by
  * edited by Jyothi Krishna V S.
  */
 
@@ -44,7 +44,7 @@ int runalgo(int argc,char** argv) {
   }
   
   if(flag != 0 ) {
-    const char* argList[NO_OF_ARGS] = {" <inputfile> " , "[max_iterations = 10]"};
+    const char* argList[NO_OF_ARGS] = {" <inputfile> " , "graphformat.txt","[max_iterations = 10]"};
     printError(INCORRECT_ARG_LIST, NO_OF_ARGS, argList);
     return -1;
   }  

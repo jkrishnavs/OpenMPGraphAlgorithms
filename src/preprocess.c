@@ -607,6 +607,12 @@ void writeSchema(const char *filename) {
 int runalgo(int argc,char** argv) {
   graph* G = readGraph(argv[1], argv[2]);
   adj = atoi(argv[6]);
+  if(argc < 7) {
+    const char* argList[6] = {" <inputfile> " , "graphformat.txt","<outputfile>", "<outputpropfile>", "<outputmapfilename>", "<adjecencyflag>"};
+    printError(INCORRECT_ARG_LIST, NO_OF_ARGS, argList);
+    return -1;
+
+  }
   graph* newG = preprocess(G, argv[5]);
 
   avgincident = ((double) G->numEdges )/ G->numNodes;
