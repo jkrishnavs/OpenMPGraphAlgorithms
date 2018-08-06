@@ -44,7 +44,15 @@ void writeGraph(graph* G, const char* filename) {
 int main(int argc, char** args) {
   struct timeval start, end;
   gettimeofday(&start, NULL);
-  // omp_set_num_threads(4);	/*  */
+  //omp_set_num_threads(4);	/*  */
+#pragma omp parallel
+  {
+
+#pragma omp master
+    {
+      printf("The number of threads is %d \n", omp_get_num_threads());
+    }
+  }
   runalgo(argc, args);		/*  */
   gettimeofday(&end, NULL);
   printTiming(OVERALL,((end.tv_sec - start.tv_sec)*1000 + ((double)(end.tv_usec - start.tv_usec))/1000));
