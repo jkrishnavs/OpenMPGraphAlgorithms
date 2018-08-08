@@ -14,8 +14,6 @@
 
 
 
-double avgincident;
-double scaledT;
 
 void output(graph *G) {
   printf("Avg Adjecency =  %f \n", avgincident);

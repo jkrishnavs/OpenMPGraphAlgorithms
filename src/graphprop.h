@@ -1,8 +1,9 @@
 int64_t T = 0 ;
-
-
-
+double avgincident;
+double scaledT;
 double aed;
+double sccindex;
+double clusterCoeff;
 
 void avgEdgeDistance(graph *G) {
   long * edgeDistances =  (long*) malloc (sizeof(long) * G->numNodes);
@@ -50,7 +51,6 @@ void avgEdgeDistance(graph *G) {
   free(edgeDistances);
 }
 
-double clusterCoeff;
 
 void avgClusterCoeff(graph *G) {
   double* localClustering = (double*) malloc (sizeof(double) * G->numNodes);
@@ -123,7 +123,6 @@ void sparsity(graph *G) {
     printf("Hello");
 }
 
-double sccindex;
 
 void sccIndex(graph *G) {
 
