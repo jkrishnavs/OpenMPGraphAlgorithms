@@ -165,7 +165,7 @@ void merge_serial(node_t* index,  double* vals, node_t start, node_t mid, node_t
   node_t tempqueue[mid - start]; // should we use malloc ?
   node_t tpf = 0; node_t tpb = 0; 
   
-  while(t1 < mid) {
+  while(t1 < mid && t2< end) {
     if(tpf == tpb) {
       // empty queue
       if(cohval(index[t1], vals) < cohval(index[t2], vals)) {
@@ -189,15 +189,29 @@ void merge_serial(node_t* index,  double* vals, node_t start, node_t mid, node_t
     }
     t1++;
   }
-  while(tpf > tpb) {
-    if(cohval(tempqueue[tpb], vals) < cohval(index[t2], vals)) {
-      index[t1] = index[t2];
-      t2++;
-    } else {
-      index[t1] = tempqueue[tpb];
-      tpb++;
+  if(t1 < mid) {
+    // on highly rare occations
+    // copy rest of the first half to the temp array
+    while(t1 < mid) {
+      tempqueue[tpf] = index[t1];
+      tpf++;	
     }
-    t1++;
+    // now copy back withou comparison t1 array already sorted.
+    while(tpf > tpb ) {
+      index[t1] = tempqueue[tpb];
+      t1++; tpb++;
+    }
+  } else {
+    while(tpf > tpb ) {
+      if(t2 < end && cohval(tempqueue[tpb], vals) < cohval(index[t2], vals)) {
+	index[t1] = index[t2];
+	t2++;
+      } else {
+	index[t1] = tempqueue[tpb];
+	tpb++;
+      }
+      t1++;
+    }
   }
   // TODO add assert?
   assert(tpf == tpb);
