@@ -8,12 +8,17 @@
 #include "powerperformacetracking.h"
 #include "graphprop.h"
 
-Graph* randomGenerator();
-Graph* erdosRenyiGenerator();
-Graph* rmatGenerator();
-Graph* SSCAGenerator();
-Graph* propertyControlledGraphGenerator();
-Graph* callappropriategenerator();
+graph* randomGenerator();
+graph* erdosRenyiGenerator();
+graph* rmatGenerator();
+graph* SSCAGenerator();
+graph* propertyControlledGraphGenerator();
+graph* callappropriategenerator();
+graph* allocateMemoryforGraph(nodes_t n, edges_t m);
+void doubleMergeSort(node_t* l1, node_t* l2, edge_t left, edge_t right);
+void merge(node_t* l1, node_t* l2, edge_t left, edge_t mid, edge_t right);
+
+
 typedef enum GraphModel {
   Random,
   ErdosRenyi,
@@ -21,6 +26,8 @@ typedef enum GraphModel {
   SSCA,
   PCGG // Property Controlled Graph Generation 
 } GraphModel;
+
+
 typedef enum GraphProperty {
   degreeanddensity,
   clustercoeff,
@@ -119,7 +126,7 @@ int runalgo(int argc, char** argv) {
     return -1;
   }
   updateConfigs(configfile);
-  Graph * G = callappropriategenerator();
+  graph * G = callappropriategenerator();
   assert(G != NULL);
   writeBackGraph(G, argv[2]);
 
@@ -138,7 +145,7 @@ int runalgo(int argc, char** argv) {
   return 0;
 }
 
-Graph* callappropriategenerator() {
+graph* callappropriategenerator() {
   if(model == Random) {
     return randomGenerator();
   } else if (model  ==   ErdosRenyi) {
@@ -150,231 +157,217 @@ Graph* callappropriategenerator() {
   } else if 
 }
 
-Graph* randomGenerator() {
-  /**
-   * NOTICE: The base algorithm follows GT Graph generators. For original
-   * GTGraph code and  licence etc see GTgraph folder
-   **/
-  LONG_T *startVertex, *endVertex;
-  WEIGHT_T *weights;
-  LONG_T i, j, u, v;
-  WEIGHT_T w;
-	LONG_T estNumEdges, numEdges, edgeNum;	
-	int *stream1, *stream2;
-	FILE* outfp;
 
-	/*----------------------------------------------*/
-	/*		initialize SPRNG 		*/
-	/*----------------------------------------------*/
 
-	stream1 = init_sprng(SPRNG_CMRG, 0, 1, SPRNG_SEED1, SPRNG_DEFAULT);
-	stream2 = init_sprng(SPRNG_CMRG, 0, 1, SPRNG_SEED2, SPRNG_DEFAULT);
+graph* randomGenerator() {
+  int *stream1, *stream2;
+  FILE* outfp;
+    
+  stream1 = init_sprng(SPRNG_CMRG, 0, 1, SPRNG_SEED1, SPRNG_DEFAULT);
+  stream2 = init_sprng(SPRNG_CMRG, 0, 1, SPRNG_SEED2, SPRNG_DEFAULT);
 
-	/*------------------------------------------------------*/
-	/*		generate edges as per the		*/		 
-	/*		graph model and user options	      	*/
-	/*------------------------------------------------------*/
+  graph* G = allocatememoryforGraph(numNodes, numEdges);
+  G->r_node_idx = (node_t) malloc (numEdges * sizeof(node_t));
 
-	if ((STORE_IN_MEMORY == 0) && (SORT_EDGELISTS == 0)) {
-		fprintf(stderr, "Generating edges on the fly\n");
-		outfp = fopen(OUTFILE, "w");
-                fprintf(outfp, "c FILE			: %s\n", OUTFILE);
-                fprintf(outfp, "c No. of vertices	: %ld\n", n);
-		if (GRAPH_MODEL == 1) 
-			fprintf(outfp, "c No. of edges		: %ld\n", m);
-		else
-			fprintf(outfp, "                                                 \n");
-                fprintf(outfp, "c Max. weight	        : %ld\n", MAX_WEIGHT);
-                fprintf(outfp, "c Min. weight          	: %ld\n", MIN_WEIGHT);
-                fprintf(outfp, "c A directed arc from u to v of weight w\n");
-                fprintf(outfp, "c is represented below as ' a  u  v  w '\n");
-		fprintf(stderr, "Generating Edges ... ");
-		
-		/* Erdos-Renyi */ 	
-		if (GRAPH_MODEL == 0) {
-			
-			/* Write the no. of edges later */
-			fprintf(outfp, "                             \n");
-			numEdges = 0;
-			
-			for (i=0; i<n; i++) {
-				for (j=0; j<n; j++) {
-					
-					if ((i==j) && (SELF_LOOPS == 0))		
-						continue;
-
-					if (p > sprng(stream1)) {
-						w = MIN_WEIGHT + (WEIGHT_T) \
-						   (MAX_WEIGHT - MIN_WEIGHT) * sprng(stream2);
-						/* Create edge */
-						fprintf(outfp, "a %ld %ld %ld\n", i+1, j+1, w);
-						numEdges++;
-					}
-							
-				} 
-			}
-
-			m = numEdges;	
-			fclose(outfp);
-			fprintf(stderr, "done\n");
-			updateEdgeVal(OUTFILE, numEdges);			
-
-		} else {
-
-                        fprintf(outfp, "p sp %ld %ld\n", n, m);
-                        numEdges = 0;
-
-                        for (i=0; i<m; i++) {
-
-				u = (LONG_T) isprng(stream1) % n;
-				v = (LONG_T) isprng(stream1) % n;
-				if ((u == v) && (SELF_LOOPS == 0)) {
-					i--;
-					continue;
-				}
-
-				w = MIN_WEIGHT + (WEIGHT_T) (MAX_WEIGHT - MIN_WEIGHT) * sprng(stream2);
-
-                                /* Create edge */
-                                fprintf(outfp, "a %ld %ld %ld\n", u+1, v+1, w);
-                               
-                        }
-
-			fclose(outfp);
-                        fprintf(stderr, "done\n");
-	
-		}	
-
-		free(stream1);
-		free(stream2);
-		return;
-
-	}
-
-	fprintf(stderr, "Generating edges ... ");
-
-	if (GRAPH_MODEL == 0) {
-
-		/* Estimate the no. of edges */
-		if (SELF_LOOPS)
-			estNumEdges = (LONG_T) (120 * n * n * p)/100;
-		else
-			estNumEdges = (LONG_T) (120 * n * (n-1) *  p)/100; 
-
-		edgeNum = 0;
-		numEdges = 0;
-
-		startVertex = (LONG_T *) malloc(estNumEdges * sizeof(LONG_T)); 
-		endVertex   = (LONG_T *) malloc(estNumEdges * sizeof(LONG_T));
-		
-		for (i=0; i<n; i++) {
-			
-			for (j=0; j<n; j++) {
-
-				if ((i==j) && (SELF_LOOPS == 0))
-                                	continue;
-
-                                if (p > sprng(stream1)) {
-
-					startVertex[edgeNum] = i; 
-					endVertex[edgeNum]   = j;
-					edgeNum++;
-
-				}	
-			}
-
-		}
-
-		numEdges = edgeNum;
-
-	} else {
-
-		startVertex = (LONG_T *) malloc(m * sizeof(LONG_T));
-		endVertex   = (LONG_T *) malloc(m * sizeof(LONG_T));
-
-		for (i=0; i<m; i++) {
-
-			u = (LONG_T) isprng(stream1) % n;
-               		v = (LONG_T) isprng(stream1) % n;
-                	if ((u == v) && (SELF_LOOPS == 0)) {
-				i--;
-                		continue;
-			}
-			startVertex[i] = u;
-			endVertex[i] = v;
-		}		
-		
-		numEdges = m;	
-
-	}
-
-	fprintf(stderr, "done\n");
-
-	free(stream1);
-
-	/*----------------------------------------------*/
-        /*              generate edge weights           */
-        /*----------------------------------------------*/
-
-        fprintf(stderr, "Generating edge weights ... ");
-
-        weights = (WEIGHT_T *) malloc(numEdges*sizeof(WEIGHT_T));
-
-        for (i=0; i<numEdges; i++) {
-                weights[i] = MIN_WEIGHT + (WEIGHT_T) (MAX_WEIGHT - MIN_WEIGHT) \
-                        * sprng(stream2);
-        }
-
-        fprintf(stderr, "done\n");
-        free(stream2);
-
-        /*-------------------------------------------------------*/
-        /*              sort the edge lists with start           */
-        /*              vertex as primary key                    */
-        /*---------------------------------------------- --------*/
-
-        if (SORT_EDGELISTS) {
-
-                fprintf(stderr, "Sorting edge list by start vertex ... ");
-		if (GRAPH_MODEL == 1) {
-                	if (SORT_TYPE == 0) {
-                        	/* Counting sort */
-                        	countingSort(startVertex, endVertex, weights, numEdges);
-                	} else {
-                        	/* Heap sort */
-                       		heapSort(startVertex, endVertex, weights, numEdges);
-                	}
-		}
-                fprintf(stderr, "done\n");
-        }
-
-        g->start = startVertex;
-        g->end = endVertex;
-        g->w = weights;
-        g->n = n;
-        g->m = numEdges;
+ 
+  
+  for(edge_t i = 0; i< numEdges; i++) {
+    node_t u = (node_t) isprng(stream1) % numNodes;
+    node_t v = (node_t) isprng(stream1) % numNodes;
+    if((u == v) && (selfloop == false)) {
+      i--;
+      continue;
+    }
+    if(weighted) {
+      int w = (int)( minWeight + ((double )(maxWeight - minWeight)) * sprng(stream2));
+      G->weights[i] = w;
+    }
+    G->node_idx[i] = v;
+    G->r_node_idx[i] = u;
+    G->begin[i+1]++; // array start with 0
+  }
+  
+  for(node_t n = 1;n< numNodes; n++) {
+    G->begin[n+1] += G->begin[n];
+  }
+  doubleMergeSort(G->r_node_idx, G->node_idx, 0, numEdges);
+  return G;
 }
 
-Graph* erdosRenyiGenerator() {
+#define comparedoubleList(l1,l2,i1,i2) ((l1[i2]< l1[i1]) ? true: ( (l1[i2]== l1[i1]) ? l2[i2] < l2[i1]: false))
+
+#define comparedoubleList(l1,l2, r1, r2, i1, i2) ((r1[i2]< l1[i1]) ? true: ( (r1[i2]== l1[i1]) ? r2[i2] < l2[i1]: false))
+
+inline void swapdoublelist(node_t* l1, node_t* l2, edge_t i1, edge_t i2) {
+  node_t tmp;
+  tmp = l1[i1]; l1[i1] = l1[i2]; l1[i2] = tmp;
+  tmp = l2[i1]; l2[i1] = l2[i2]; l2[i2] = tmp;
+}
+
+inline void copydoublelist(node_t* l1, node_t* l2, node_t* c1, node_t* c2, edge_t i1, edge_t i2) {
+  c1[i2] = l1[i1];
+  c2[i2] = l2[i1];
+}
+
+void merge(node_t* l1, node_t* l2, edge_t start, edge_t mid, edge_t end) {
+  node_t t1 = start;  node_t t2 = mid;
+  node_t tmp;  node_t temp; node_t w = mid-1;
+  node_t tempqueue[(mid - start)*2]; // should we use malloc ?
+  node_t offset = mid-start;
+  node_t *tq2 = &(tempqueue[offset]);
+  
+  node_t tpf = 0; node_t tpb = 0; 
+  
+  while(t1 < mid && t2< end) {
+    if(tpf == tpb) {
+      // empty queue
+      if(comparedoubleList(l1, l2, t1, t2)) {
+	copydoublelist(l1, l2, tempqueue, tq2, t1, tpf);
+	tpf++;
+	copydoublelist(l1, l2, l1, l2, t2, t1);
+	t2++;
+      }
+    } else{
+      if(comparedoublelist(tempqueue, tq2, l1, l2, tpb, t2)) {
+	copydoublelist(l1, l2, tempqueue, tq2, t1, tpf);
+	tpf++;
+	copydoublelist(l1, l2, l1, l2, t2, t1);
+	t2++;
+      } else {	
+	copydoublelist(l1, l2, tempqueue, tq2, t1, tpf);
+	tpf++;
+	copydoublelist(tempqueue, tq2, l1, l2,  tpb, t1);
+	tpb++;
+      }
+    }
+    t1++;
+  }
+  if(t1 < mid) {
+    // on highly rare occations
+    // copy rest of the first half to the temp array
+    while(t1 < mid) {
+      copydoublelist(l1, l2, tempqueue, tq2, t1, tpf);
+      tpf++;	
+    }
+    // now copy back withou comparison t1 array already sorted.
+    while(tpf > tpb ) {
+      copydoublelist(tempqueue, tq2,  l1, l2,  tpf, t1);
+      t1++; tpb++;
+    }
+  } else {
+    while(tpf > tpb ) {
+      if(t2 < end && comparedoublelist(tempqueue, tq2, l1, l2, tpb, t2)) {
+	copydoublelist(l1, l2, l1, l2, t2, t1);
+	t2++;
+      } else {
+	copydoublelist(tempqueue, tq2, l1, l2,  tpb, t1);
+	tpb++;
+      }
+      t1++;
+    }
+  }
+  // TODO add assert?
+  assert(tpf == tpb);
+  assert(t1 == (t2-1)); 
+}
+ 
+ 
+
+
+
+void doubleMergeSort(node_t* l1, node_t* l2, edge_t left, edge_t right) {
+
+  if((right - left)< 100) {
+    edge_t mid = left + (right-left)/2;
+    doubleMergeSort(l1,l2, left, mid);
+    doubleMergeSort(l1,l2, mid, right);
+    merge( l1, l2, left, mid, right);
+  } else {
+    edge_t itr = left;
+    for(; itr < right; itr++) {
+      edge_t itr2= itr;
+      for(; itr2 < right; itr2++) {
+	if(comparedoubleList(l1,l2, itr, itr2)) {
+	  swapdoubleList(l1,l2, itr, itr2);
+	}
+      }
+    }
+  }
+
+}
+
+
+
+graph* allocateMemoryforGraph(nodes_t n, edges_t m) {
+  graph *G = (graph*) malloc (sizeof(graph));
+  G->begin = (edge_t*) malloc( (n+1)* sizeof(edge_t));
+  G->node_idx = (node_t*) malloc(m * sizeof(node_t));
+  if(weighted == true) {
+    G->weights = (int*) malloc(m* sizeof(int));
+  }
+  /* Initialize */
+  memset(G->begin, 0, (n+1) * sizeof(edge_t));
+  
+  return G;
+}
+
+
+graph* erdosRenyiGenerator() {
+  int *stream1, *stream2;
+  stream1 = init_sprng(SPRNG_CMRG, 0, 1, SPRNG_SEED1, SPRNG_DEFAULT);
+  stream2 = init_sprng(SPRNG_CMRG, 0, 1, SPRNG_SEED2, SPRNG_DEFAULT);
 
   /**
    * NOTICE: The base algorithm follows GT Graph generators. For original
    * GTGraph code and  licence etc see GTgraph folder
    **/
+  edge_t maxEdges = 0;
+  numEdges = 0;
+  if(selfloop == false) {
+    /* Should cover 90 percent of edges */
+    maxEdges = (edge_t) ( 1.1 * ((edgeProbablity) * numNodes) * (numNodes -1));
+  } else {
+    maxEdges = (edge_t) ( 1.1 * ((edgeProbablity) * numNodes) * (numNodes));
+  }
+  graph *G = allocatememoryforGraph(n,maxEdges);
+   
+  /* Write the no. of edges later */
 
-
+  edg = 0;
+  for (node_t i=0; i<n; i++) {
+    G->begin[i] = edg;
+    for (node_t j=0; j<n; j++) {
+      if ((i==j) && (selfloop == false))		
+	continue;
+      if (p > sprng(stream1)) {
+	if(weighted) {
+	  int w = (int)( minWeight + ((double )(maxWeight - minWeight)) * sprng(stream2));
+	  G->weights[edg] = w;
+	}
+	G->node_idx[edg] = j;
+	edg ++;	  
+      }
+    }
+  }
+  assert(edg < maxEdges);
+  return G;
 }
 
-Graph* rmatGenerator() {
-    /**
+graph* rmatGenerator() {
+  /**
    * NOTICE: The base algorithm follows GT Graph generators. For original
    * GTGraph code and  licence etc see GTgraph folder
    **/
 
 }
 
+graph* propertyControlledGraphGenerator() {
 
-Graph* SSCAGenerator() {
+
+}
+
+
+graph* SSCAGenerator() {
     /**
    * NOTICE: The base algorithm follows GT Graph generators. For original
    * GTGraph code and  licence etc see GTgraph folder
