@@ -17,6 +17,8 @@ graph* callappropriategenerator();
 graph* allocateMemoryforGraph(nodes_t n, edges_t m);
 void doubleMergeSort(node_t* l1, node_t* l2, edge_t left, edge_t right);
 void merge(node_t* l1, node_t* l2, edge_t left, edge_t mid, edge_t right);
+void choosePartition(node_t* u, node_t* v, node_t step, int* stream1);
+void varyParams(double* a, double* b, double* c, double* d, int * stream3, int* stream4);
 
 
 typedef enum GraphModel {
@@ -353,16 +355,112 @@ graph* erdosRenyiGenerator() {
   return G;
 }
 
+void choosePartition(node_t* u, node_t* v, node_t step, int* stream1) {
+  double p = sprng(stream1);
+  if (p < a) {
+    
+    /* Do nothing */
+    
+  } else if ((a < p) && (p < a+b)) {
+    
+    *v = *v + step;
+    
+  } else if ((a+b < p) && (p < a+b+c)) {
+    
+    *u = *u + step;
+    
+  } else if ((a+b+c < p) && (p < a+b+c+d)) {
+    
+    *u = *u + step;
+    *v = *v + step;
+  }
+
+}
+void varyParams(double* a, double* b, double* c, double* d, int* stream3,
+		int* stream4) {
+  double v, S;
+  /* Allow a max. of 5% variation */
+  v = 0.05;
+  if (sprng(stream4) > 0.5)
+    *a += *a * v * sprng(stream3);
+  else 
+    *a -= *a * v * sprng(stream3);
+  
+  if (sprng(stream4) > 0.5)
+    *b += *b * v * sprng(stream3);
+  else 
+    *b += *b * v * sprng(stream3);
+  
+  if (sprng(stream4) > 0.5)
+    *c += *c * v * sprng(stream3);
+  else 
+    *c -= *c * v * sprng(stream3);
+  
+  if (sprng(stream4) > 0.5)
+    *d += *d * v * sprng(stream3);
+  else 
+    *d -= *d * v * sprng(stream3);
+  // Normalize
+  S = *a + *b + *c + *d;
+  *a = *a/S;
+  *b = *b/S;
+  *c = *c/S;
+  *d = *d/S;
+  
+
+}
+
+
+
 graph* rmatGenerator() {
   /**
    * NOTICE: The base algorithm follows GT Graph generators. For original
    * GTGraph code and  licence etc see GTgraph folder
    **/
+  int *stream1, *stream2, *stream3, *stream4;
+  stream1 = init_sprng(SPRNG_CMRG, 0, 1, SPRNG_SEED1, SPRNG_DEFAULT);
+  stream2 = init_sprng(SPRNG_CMRG, 0, 1, SPRNG_SEED2, SPRNG_DEFAULT);
+  stream3 = init_sprng(SPRNG_CMRG, 0, 1, SPRNG_SEED3, SPRNG_DEFAULT);
+  stream4 = init_sprng(SPRNG_CMRG, 0, 1, SPRNG_SEED4, SPRNG_DEFAULT);
+  double a0, b0, c0, d0;
+  node_t u, v;
+  for(edge_t it = 0; it< numEdges; it++) {
+    a0 = a; b0 = b; c0 = c; d0= d;
+    u = 0;
+    v = 0;
+    step = numNodes/2;
+    while (step >= 1) {
+      choosePartition(&u, &v, step, stream1);
+      step = step / 2;
+      varyParams(&a0, &b0, &c0, &d0, stream3, stream4);
+    }
+
+    if(selfloop == false && (u == v)) {
+      it --;
+      continue;
+    }
+
+    if(weighted) {
+      w = (int)( minWeight + ((double )(maxWeight - minWeight)) * sprng(stream2));
+      G->weights[edg] = w;
+    }
+    G->node_idx[i] = v;
+    G->r_node_idx[i] = u;
+    G->begin[i+1]++; // array start with 0
+    
+  }
+  // sort and Normalize
+  for(node_t n = 1;n< numNodes; n++) {
+    G->begin[n+1] += G->begin[n];
+  }
+
+  doubleMergeSort(G->r_node_idx, G->node_idx, 0, numEdges);
+  return G;  
 
 }
 
 graph* propertyControlledGraphGenerator() {
-
+  // TODO
 
 }
 
