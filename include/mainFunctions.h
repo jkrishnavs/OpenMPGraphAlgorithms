@@ -44,7 +44,7 @@ void writeGraph(graph* G, const char* filename) {
 int main(int argc, char** args) {
   struct timeval start, end;
   gettimeofday(&start, NULL);
-  //omp_set_num_threads(4);	/*  */
+  // omp_set_num_threads(4);	/* for big only cases */
 #pragma omp parallel
   {
 
