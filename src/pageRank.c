@@ -48,7 +48,7 @@ int runalgo(int argc,char** argv) {
 
 
   if(flag != 0) {
-    const char* argList[NO_OF_ARGS] = {" <inputfile>", "[max_iteration=100]", "[eplision=0.001]", "[delta=0.85]" };
+    const char* argList[NO_OF_ARGS] = {" <inputfile>", "graphformat.txt","[max_iteration=100]", "[eplision=0.001]", "[delta=0.85]" };
     printError(INCORRECT_ARG_LIST, NO_OF_ARGS, argList);
     return -1;
   }

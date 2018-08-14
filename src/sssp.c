@@ -60,7 +60,7 @@ int runalgo(int argc,char** argv) {
 
   
   if(flag != 0) {
-    const char* argList[NO_OF_ARGS] = {" <inputfile> " , "[root = 0]", "maxLength=10]","[seed = 0]"};
+    const char* argList[NO_OF_ARGS] = {" <inputfile> " , "graphformat.txt", "[root = 0]", "maxLength=10]","[seed = 0]"};
     printError(INCORRECT_ARG_LIST, NO_OF_ARGS, argList);
     return -1;
   }

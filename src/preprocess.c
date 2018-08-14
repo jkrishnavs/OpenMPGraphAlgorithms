@@ -148,8 +148,6 @@ void dumpmapping(graph *G, graphmap*  gm,const char * filename) {
   }
 }
 
-
-
 void initCommunities(graph *G) {
   
   comm = (node_t*) malloc (G->numNodes * sizeof(node_t));
@@ -162,18 +160,63 @@ double* coeff;
 #define cohval(index,arr) arr[index]
 
 void merge_serial(node_t* index,  double* vals, node_t start, node_t mid, node_t end) {
-  node_t t1 = start;
-  node_t t2 = mid;
-  node_t temp;
-  while(t1 < mid) {
-    if(cohval(index[t1], vals) < cohval(index[t2], vals)) {
-      // swap ?
-      temp = index[t1];
-      index[t1] = index[t2];
-      index[t2] = temp;
+  node_t t1 = start;  node_t t2 = mid;
+  node_t tmp;  node_t temp; node_t w = mid-1;
+  node_t tempqueue[mid - start]; // should we use malloc ?
+  node_t tpf = 0; node_t tpb = 0; 
+  
+  while(t1 < mid && t2< end) {
+    if(tpf == tpb) {
+      // empty queue
+      if(cohval(index[t1], vals) < cohval(index[t2], vals)) {
+	tempqueue[tpf] = index[t1];
+	tpf++;
+	index[t1] = index[t2];
+	t2++;
+      }
+    } else{
+      if(cohval(tempqueue[tpb], vals) < cohval(index[t2], vals)) {
+	tempqueue[tpf] = index[t1];
+	tpf++;
+	index[t1] = index[t2];
+	t2++;
+      } else {
+	tempqueue[tpf] = index[t1];
+	tpf++;
+	index[t1] = tempqueue[tpb];
+	tpb++;
+      }
     }
     t1++;
-  }  
+  }
+  if(t1 < mid) {
+    // on highly rare occations
+    // copy rest of the first half to the temp array
+    while(t1 < mid) {
+      tempqueue[tpf] = index[t1];
+      tpf++;	
+    }
+    // now copy back withou comparison t1 array already sorted.
+    while(tpf > tpb ) {
+      index[t1] = tempqueue[tpb];
+      t1++; tpb++;
+    }
+  } else {
+    while(tpf > tpb ) {
+      if(t2 < end && cohval(tempqueue[tpb], vals) < cohval(index[t2], vals)) {
+	index[t1] = index[t2];
+	t2++;
+      } else {
+	index[t1] = tempqueue[tpb];
+	tpb++;
+      }
+      t1++;
+    }
+  }
+  // TODO add assert?
+  assert(tpf == tpb);
+  assert(t1 == (t2-1));
+  
 }
 void merge_parallel(node_t* index1,  double* vals, node_t start, node_t mid, node_t end) {
   // TODO
@@ -607,6 +650,12 @@ void writeSchema(const char *filename) {
 int runalgo(int argc,char** argv) {
   graph* G = readGraph(argv[1], argv[2]);
   adj = atoi(argv[6]);
+  if(argc < 7) {
+    const char* argList[6] = {" <inputfile> " , "graphformat.txt","<outputfile>", "<outputpropfile>", "<outputmapfilename>", "<adjecencyflag>"};
+    printError(INCORRECT_ARG_LIST, NO_OF_ARGS, argList);
+    return -1;
+
+  }
   graph* newG = preprocess(G, argv[5]);
 
   avgincident = ((double) G->numEdges )/ G->numNodes;

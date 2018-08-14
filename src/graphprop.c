@@ -14,8 +14,6 @@
 
 
 
-double avgincident;
-double scaledT;
 
 void output(graph *G) {
   printf("Avg Adjecency =  %f \n", avgincident);
@@ -33,7 +31,7 @@ void output(graph *G) {
 int runalgo(int argc,char** argv) {
   omp_set_num_threads(2);
   if(argc < NO_OF_ARGS-1) {
-    const char* argList[NO_OF_ARGS] = {" <inputfile> " };
+    const char* argList[NO_OF_ARGS] = {" <inputfile> ", "<graphformat.txt>" };
     printError(INCORRECT_ARG_LIST, NO_OF_ARGS, argList);
     return -1;
   }

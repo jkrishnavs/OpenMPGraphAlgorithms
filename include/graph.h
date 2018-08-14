@@ -43,7 +43,7 @@ static const value_t NIL_VAL = (value_t) -1;
 struct graph
 {
 
-  edge_t* begin; /* row ptr of the edges. Array size = N. */
+  edge_t* begin; /* row ptr of the edges. Array size = N +1. */
   node_t* node_idx; /* sparse column. Each value represents the destination of the edge. Array size = M. */
   node_t* node_idx_src;  /* sparse column. Created for fast processing. Each value represents the source of the edge. Array size = M. */
 
