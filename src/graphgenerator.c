@@ -1,6 +1,7 @@
 /*****
  * Original base algorithm from GTGraph. 
  ****/
+
 #include<unistd.h>
 #include"graph.h"
 #include "mainFunctions.h"
@@ -11,9 +12,18 @@
 graph* randomGenerator();
 graph* erdosRenyiGenerator();
 graph* rmatGenerator();
-graph* SSCAGenerator();
 graph* propertyControlledGraphGenerator();
+
 graph* callappropriategenerator();
+graph* StocasticBlockModel();
+graph* planarNetworkgraph();
+graph* diagonalGraphGenerator();
+graph* randomizeNodeIds();
+
+
+
+
+
 graph* allocateMemoryforGraph(nodes_t n, edges_t m);
 void doubleMergeSort(node_t* l1, node_t* l2, edge_t left, edge_t right);
 void merge(node_t* l1, node_t* l2, edge_t left, edge_t mid, edge_t right);
@@ -47,6 +57,11 @@ boolean selfloop;
 double edgeProbability;
 /***** RMAT **********/
 double a,b,c,d;
+/******** SSCA ********/
+node_t maxCliqueSize;
+node_t totClusters;
+
+
 /********** Graph prop value *******/
 /**
  NOTE: These parameters has higher preference over numEdges and numNodes.
@@ -61,6 +76,18 @@ double aed;
  * standard deviation on degrees
  */
 double degreesd;
+/**
+ ** If set to true the nodes will be 
+ **/
+bool sortedSBMGraph; 
+
+bool degreeflag;
+bool densityflag;
+bool clusteringCoeffflag;
+bool aedflag;
+bool degreesdflag;
+
+
 /*****************/
 /** 
    Acceptable error as a percentage.
@@ -80,16 +107,30 @@ int minWeight;
 
 /**** dafualt configs ******/
 void setbaseConfigs() {
-  model = Random; // m
   weighted = false; // wf
+  selfloop = false; // sl
+  sortedSBMGraph = true; 
+
+  degreeflag = false;
+  densityflag = false;
+  clusteringCoeffflag = false;
+  aedflag = false;
+  degreesdflag = false;
+
+
+  model = Random; // m
   numNodes = 100000; //n
   numEdges = 1000000; // e
-  selfloop = false; // sl
   edgeProbability = 0.0001; //ep
+  
   a = 0.45; // a
   b = 0.15; // b
   c = 0.15; // c
   d = 0.25; // d
+
+
+  /**** Ma Clique Size **********/
+  maxCliqueSize = 4;
 
   /*** Properties of interest *******/
   degree  = 10;// dg
@@ -100,6 +141,7 @@ void setbaseConfigs() {
   err = 1; /*1%*/ // err
   maxWeight = 100; //mw
   minWeight = 1; // iw
+
  
 }
 
@@ -268,7 +310,6 @@ void merge(node_t* l1, node_t* l2, edge_t start, edge_t mid, edge_t end) {
       t1++;
     }
   }
-  // TODO add assert?
   assert(tpf == tpb);
   assert(t1 == (t2-1)); 
 }
@@ -326,7 +367,7 @@ graph* erdosRenyiGenerator() {
   edge_t maxEdges = 0;
   numEdges = 0;
   if(selfloop == false) {
-    /* Should cover 90 percent of edges */
+    /* Should cover all edges 90 percent of time*/
     maxEdges = (edge_t) ( 1.1 * ((edgeProbablity) * numNodes) * (numNodes -1));
   } else {
     maxEdges = (edge_t) ( 1.1 * ((edgeProbablity) * numNodes) * (numNodes));
@@ -336,9 +377,9 @@ graph* erdosRenyiGenerator() {
   /* Write the no. of edges later */
 
   edg = 0;
-  for (node_t i=0; i<n; i++) {
+  for (node_t i=0; i<numNodes; i++) {
     G->begin[i] = edg;
-    for (node_t j=0; j<n; j++) {
+    for (node_t j=0; j<numNodes; j++) {
       if ((i==j) && (selfloop == false))		
 	continue;
       if (p > sprng(stream1)) {
@@ -351,7 +392,8 @@ graph* erdosRenyiGenerator() {
       }
     }
   }
-  assert(edg < maxEdges);
+  G->begin[numNodes] = edg;
+  assert(edg <= maxEdges);
   return G;
 }
 
@@ -460,16 +502,126 @@ graph* rmatGenerator() {
 }
 
 graph* propertyControlledGraphGenerator() {
-  // TODO
+  if(densityflag == true && degreeflag == true) {
+    numNodes = (nodes_t) ( density / degree );
+    numEdges = (edges_t) ( degree * numNodes );
+  } else if (densityflag == true) {
+    numEdges = (edges_t) ( density * numNodes * numNodes);
+  } else if (degreeflag == true) {
+    numEdges = (edges_t) ( degree * numNodes);
+  }
+  // Associate expected clustering coefficient.
+  // degree sd
+  // aed.
+  
 
+  // TODO
+  
 }
 
 
-graph* SSCAGenerator() {
-    /**
-   * NOTICE: The base algorithm follows GT Graph generators. For original
-   * GTGraph code and  licence etc see GTgraph folder
-   **/
+/***
+ * We can use this to scale up the community probabilities  
+ * in the probability vector. Will be helpful when we are trying 
+ * to generate graphs with large nmber of communities
+ ***/
+#define PVECTORSCALE 1
 
+node_t getCommunityId(double* vec, double randComm, node_t len) {
+  // Binary search tree
+  node_t id;
+  node_t base = 1;
+  do {
+    id = (len + base)/2 ;
+    if(randComm < vec[id] && randComm > vec[id-1])
+      return id;
+    else if (randComm < vec[id])
+      len = id;
+    else
+      base = id;
+  } while(len > base);
+
+  /** Debug statement can remove after enough testing **/
+  assert(0 == 1);
+  return NIL_NODE;
+}
+
+
+
+/***
+ * probabilityVector: vector [length k+1, where k is the number of communities] is probability vector 
+ * of a node to be part of community. k is the number fo communities  
+ * edgeProbablilityMatrix: [size k*k] where each entry (i,j) gves the probability of edge between nodes of two
+ * communities i and j.
+ * k : number of communities
+ **/
+  graph* SBMGraphGenerator(double* probablilityVector, double *edgeProbablilityMatrix, node_t k) {
+  node_t* comm  = (node_t*) malloc (numNodes * sizeof(nodes_t));
+
+  int* stream1,* stream2;
+  
+  stream1 = init_sprng(SPRNG_CMRG, 0, 1, SPRNG_SEED1, SPRNG_DEFAULT);
+  stream2 = init_sprng(SPRNG_CMRG, 0, 1, SPRNG_SEED2, SPRNG_DEFAULT);
+
+  node_t i;
+  for(i=0; i< numNodes; i++) {
+    double randComm = sprng(stream1) * PVECTORSCALE;
+    node_t commID = getCommunityId(probabilityVector, randComm, k);
+    comm[i] = commID;
+  }
+
+  node_t j;
+  /****
+   * The expected number of edges is assumed to be saved in numEdges.
+   * before this point.
+   ****/
+  maxEdges = (edges_t) (1.1 *numEdges);
+  graph* G =  allocateMemoryforGraph(numNodes, maxEdges);
+  edg = 0;
+  for(i=0; i< numNodes; i++) {
+    G->begin[i] = edg;
+    for (j=0; j< numNodes; j++) {
+      if(selfloop == false && i == j)
+	continue;
+      double p = edgeProbabilityMatrix[comm[i]][comm[j]];
+      if (p > sprng(stream2)) {
+	if(weighted) {
+	  int w = (int)( minWeight + ((double)(maxWeight - minWeight)) * sprng(stream2));
+	  G->weights[edg] = w;
+	}
+	G->node_idx[edg] = j;
+	edg ++;	  
+      }
+    }
+  }
+  G->begin[numNodes] = edg;
+  assert(maxEdges >= edg);
+  return G;
+}
+
+graph* StocasticBlockModel() {
+  
+  // TODO
+  
+  
+}
+
+graph* symmetricStocasticBlockModel(double k, double A, double B) {
+  // TODO
+  
+}
+
+
+
+graph* planarNetworkgraph() {
+  // TODO 
+}
+
+graph* diagonalGraphGenerator() {
   // TODO
 }
+
+graph* randomizeNodeIds() {
+  // TODO
+}
+

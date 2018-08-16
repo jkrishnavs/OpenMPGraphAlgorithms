@@ -215,7 +215,13 @@ void merge_serial(node_t* index,  double* vals, node_t start, node_t mid, node_t
   }
   // TODO add assert?
   assert(tpf == tpb);
-  assert(t1 == (t2-1));
+  if(t2 < end) {
+    assert(t1 == (t2-1));
+  } else {
+    //assert(t2 == end);
+    assert(t1 == end);
+  }
+  //
   
 }
 void merge_parallel(node_t* index1,  double* vals, node_t start, node_t mid, node_t end) {
