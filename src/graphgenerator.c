@@ -8,6 +8,7 @@
 #include "print.h"
 #include "powerperformacetracking.h"
 #include "graphprop.h"
+#include "normaldistribution.h"
 
 graph* randomGenerator();
 graph* erdosRenyiGenerator();
@@ -17,9 +18,18 @@ graph* propertyControlledGraphGenerator();
 graph* callappropriategenerator();
 graph* StocasticBlockModel();
 graph* planarNetworkgraph();
-graph* diagonalGraphGenerator();
-graph* randomizeNodeIds();
+graph* diagonalGraphGenerator(boolean randomizedmidpoint);
 
+/** Transform Graphs **/
+graph* randomizeNodeIds(graph* G);
+graph* compactNodes(graph* G);
+graph* reduceclustering(graph* G);
+graph* increaseClustering(graph* G);
+graph* decreaseClustering(graph* G);
+graph* reduceDegreesd(graph* G);
+graph* increaseDegreesd(graph* G);
+
+// TODO double check random number generation.
 
 
 
@@ -35,7 +45,9 @@ typedef enum GraphModel {
   Random,
   ErdosRenyi,
   RMAT,
-  SSCA,
+  SBM, // Stochastic Block Model
+  SSBM, // Symmetric Stochastic Block Model
+  LSSBM, // Log Sum Stochastic Block Model
   PCGG // Property Controlled Graph Generation 
 } GraphModel;
 
@@ -502,6 +514,7 @@ graph* rmatGenerator() {
 }
 
 graph* propertyControlledGraphGenerator() {
+  numNodes = (nodes_t) ( density / degree );
   if(densityflag == true && degreeflag == true) {
     numNodes = (nodes_t) ( density / degree );
     numEdges = (edges_t) ( degree * numNodes );
@@ -577,13 +590,13 @@ node_t getCommunityId(double* vec, double randComm, node_t len) {
    ****/
   maxEdges = (edges_t) (1.1 *numEdges);
   graph* G =  allocateMemoryforGraph(numNodes, maxEdges);
-  edg = 0;
+  node_t edg = 0;
   for(i=0; i< numNodes; i++) {
     G->begin[i] = edg;
     for (j=0; j< numNodes; j++) {
       if(selfloop == false && i == j)
 	continue;
-      double p = edgeProbabilityMatrix[comm[i]][comm[j]];
+      double p = edgeProbabilityMatrix[(comm[i])*k + comm[j]];
       if (p > sprng(stream2)) {
 	if(weighted) {
 	  int w = (int)( minWeight + ((double)(maxWeight - minWeight)) * sprng(stream2));
@@ -596,6 +609,8 @@ node_t getCommunityId(double* vec, double randComm, node_t len) {
   }
   G->begin[numNodes] = edg;
   assert(maxEdges >= edg);
+  free(probablilityVector);
+  free(edgeProbablilityMatrix);
   return G;
 }
 
@@ -606,22 +621,130 @@ graph* StocasticBlockModel() {
   
 }
 
-graph* symmetricStocasticBlockModel(double k, double A, double B) {
+/****
+ * k number of clusters
+ * A is the intracluster edge probability
+ * B is the intercluster edge probability
+ * Ideally, A > B 
+ */
+graph* symmetricStocasticBlockModel(node_t k, double A, double B) {
+  double *probvec = (double *) malloc((k+1) * sizeof(double));
+  double *edgeProbMatrix = (double *) malloc ((k*k) * sizeof(double));
+  double nodeprob = (double ) ( (double)PVECTORSCALE / k);
+
+
+  double numClusters = (double) numNodes / k;
+  /*** Calculate the expected number of edges ***/
+  if(selfloop == true) {
+    edge_t intraClusterEdges = (edge_t) numClusters * (k*k) * A;
+    edge_t interClusterEdges = [(double) (numNodes * numNodes) - numClusters * (k*k)] * B;
+    numEdges = intraClusterEdges + interClusterEdges;  
+  } else {
+    edge_t intraClusterEdges = (edge_t) numClusters * (k*(k-1)) * A;
+    edge_t interClusterEdges = [(double) (numNodes * (numNodes - 1)) - numClusters * (k*(k -1))] * B;
+    numEdges = intraClusterEdges + interClusterEdges;  
+  }
+  
+  
+  
+
+#pragma omp parallel for
+  for(node_t i=0;i<k;i++) {
+    probvec[i] = nodeprob *i;
+    node_t j;
+    node_t base = i *k;
+    for(j = 0; j<k; j++) {
+      if(i == j)
+	edgeProbMatrix[base + j] = A;
+      else
+	edgeProbMatrix[base +j ] = B
+    }
+  }
+  probvec[k] = PVECTORSCALE;
+  return SBMGraphGenerator(probvec, edgeProbMatrix, k);
+}
+
+
+graph* planarRoadNetworkgraph() {
   // TODO
   
 }
 
+graph* diagonalGraphGenerator(boolean randomizedmidpoint) {
+  numEdges = (edges_t) degree * numNodes;
+  node_t i;
+  maxEdges = (edges_t) (1.1 *numEdges);
+  graph* G= allocateMemoryforGraph(numNodes, maxNodes);
+  data.z1 = 0;
+  data.generate = false;
+  int* stream;
+  stream1 = init_sprng(SPRNG_CMRG, 0, 1, SPRNG_SEED1, SPRNG_DEFAULT);
 
 
-graph* planarNetworkgraph() {
-  // TODO 
+  // Thread local data. 
+  tldBoxMuller data;
+
+  
+  node_t edg = 0;
+  for(i=0; i< numNodes; i++) {
+    G->begin[i] = edg;
+    node_t idegree = (node_t) generateGaussiandistriution(degree, degreesd, data);
+    node_t midPoint; node_t startPoint;
+    if(randomizedmidpoint) {
+      midPoint = (node_t) ispring(stream1) % idegree;
+    } else {
+      midPoint = idegree/2;
+    }
+
+    if(midpoint < i) {
+      midPoint = i;
+    }
+    if((idegree -midPoint) > (numNodes -i)) {
+      midPoint = idgree - (numNodes -i);
+    }
+    startPoint = i - midPoint;
+    node_t endPoint = startPoint + idegree;
+    if(selfloop ==  false)
+      endPoint++;
+    for(node_t j =startPoint; j < endPoint;j++) {
+      if ((i==j) && (selfloop == false))		
+	continue;
+      if(weighted) {
+	int w = (int)( minWeight + ((double )(maxWeight - minWeight)) * sprng(stream2));
+	G->weights[edg] = w;
+      }
+      G->node_idx[edg] = j;
+      edg ++;
+    }
+  }
+  return G;
 }
 
-graph* diagonalGraphGenerator() {
+/* Increase aed*/
+graph* randomizeNodeIds(graph *G) {
   // TODO
 }
 
-graph* randomizeNodeIds() {
+/** Reduce aed **/
+graph* compactNodes(graph *G) {
+  // TODO
+
+}
+
+graph* reduceclustering(graph* G) {
+  // TODO increase intercluster edges.
+}
+graph* increaseClustering(graph* G) {
+  // TODO increase intra cluster edges
+}
+
+graph* reduceDegreesd(graph* G) {
   // TODO
 }
+graph* increaseDegreesd(graph* G) {
+  // TODO
+}
+
+
+
 
