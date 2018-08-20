@@ -20,14 +20,6 @@ graph* StocasticBlockModel();
 graph* planarNetworkgraph();
 graph* diagonalGraphGenerator(boolean randomizedmidpoint);
 
-/** Transform Graphs **/
-graph* randomizeNodeIds(graph* G);
-graph* compactNodes(graph* G);
-graph* reduceclustering(graph* G);
-graph* increaseClustering(graph* G);
-graph* decreaseClustering(graph* G);
-graph* reduceDegreesd(graph* G);
-graph* increaseDegreesd(graph* G);
 
 // TODO double check random number generation.
 
@@ -50,6 +42,23 @@ typedef enum GraphModel {
   LSSBM, // Log Sum Stochastic Block Model
   PCGG // Property Controlled Graph Generation 
 } GraphModel;
+
+
+
+// TODO double or float for individual degree, coeff and ed ?
+typedef struct MetaData {
+  int changes;
+  int negativeChanges;
+  node_t maxDegree;
+  double degree;
+  double aed;
+  double density;
+  double degreesd;
+  double custercoeff; 
+  node_t* degree;
+  double* coeff;
+  //  node_t* ed;
+}gdata;
 
 
 typedef enum GraphProperty {
@@ -720,28 +729,279 @@ graph* diagonalGraphGenerator(boolean randomizedmidpoint) {
   return G;
 }
 
-/* Increase aed*/
-graph* randomizeNodeIds(graph *G) {
+//
+// TODO have a global minima flag.
+// if set we will accept random negative
+// changes to improve the chances of avoiding
+// falling into a local minima.
+boolean globalMinimaFlag = false;
+#define biasedCoinFlip 30
+ 
+/* Increase or decrese aed
+ * if flag = 0 decrease
+ * if flag = 1 increase
+*/
+graph* adjustAED(graph *G, gdata& data, int* stream, int itrs, int flag) {
   // TODO
+  data.changes = 0;
+  data.negativeChanges = 0;
+  int i;
+  stream = init_sprng(SPRNG_CMRG, 0, 1, SPRNG_SEED1, SPRNG_DEFAULT);
+  j=0;
+  node_t src[2*itrs];
+  for(i=0; i< itrs; i++) {
+    src[i+j] = (node_t) isprng(stream1) % numNodes;
+    j++;
+    src[i+j] = (node_t) isprng(stream1) % numNodes;
+  }
+  /***
+   ** To parallelize these loops value dependencies shpuld be handled.
+   **/
+  node_t src1, src2;
+  node_t buf[data.maxDegree];
+  int bufWeight[data.maxDegree];
+  for(int i =0; i< itrs; i++) {
+    // swap i and itrs+i elements
+    // if useful
+    src1 =  src[i];
+    src2 = src[itrs+i];
+    node_t ed1, ed2;
+    // calculate base ed
+    node_t newed1 = 0;
+    for (edge_t y= G->begin[src1];y < G->begin[src1+1]; y ++) {
+      node_t d = G->node_idx[y];
+      ed1 += src1 - d;
+    }
+
+    for(edge_t y= G->begin[src2];y < G->begin[src2+1]; y++) {
+      node_t d = G->node_idx[y];
+      ed2 += src2 - d;
+    }
+    
+    // calculate potential new ed
+    node_t newed1 = 0;
+    for (edge_t y= G->begin[src1];y < G->begin[src1+1]; y ++) {
+      node_t d = G->node_idx[y];
+      newed1 += src2 - d;
+    }
+
+    node_t newed2 = 0;
+    for(edge_t y= G->begin[src2];y < G->begin[src2+1]; y++) {
+      node_t d = G->node_idx[y];
+      newed2 += src1 - d;
+    }
+    bool swap = false;
+    if( (((newed1 + newed2) >  (ed1+ ed2)) && (flag == 1)) ||
+	(((newed1 + newed2) <  (ed1+ ed2)) && (flag == 0))) {
+      swap  = true;
+    } else if(globalMinimaFLag == true) {
+      // swap randomly for negative change to avoid falling into
+      // local minima
+      if( isprng(stream1) % 100 < biasedCoinFlip) {
+	swap = true;
+	data.negativeChanges++
+      }
+    }
+
+  
+    if(swap == true && (src1 != src2)) {
+      data.changes++;
+      if( (G->begin[src1+1]-G->begin[src1]) < (G->begin[src2+1]-G->begin[src2])) {
+	// shift right
+	edge_t id =0;
+
+	// copy src 2 edges to buf
+	edge_t bufsize =  G->begin[src2+1] - G->begin[src2];
+	for (edge_t y= G->begin[src2];y < G->begin[src2+1]; y ++) {
+	  buf[id] = G->node_idx[y];
+	  if(weighted)
+	    bufWeight[id] = G->weights[y];
+	  id++;
+	}
+	
+	edge_t diff = (G->begin[src1+1]-G->begin[src1]) - (G->begin[src2+1]-G->begin[src2]);
+
+	
+	// move src1 edges to src2
+	id = G->begin[src2  + diff];
+	for (edge_t y= G->begin[src1];y < G->begin[src1+1]; y ++) {
+	  G->node_idx[id] = G->node_idx[y];
+	  if(weighted)
+	    G->weights[id] = G->weights[y]; 
+	  id++;
+	}
+
+
+	assert(id == G->begin[src2+1]);
+
+	// shift the edges of nodes in between
+	edge_t y = G->begin[src2 -1];
+	for(; y > G->begin[src+1]; y--) {
+	  G->node_idx[y+diff] = G->node_idx[y];
+	  if(weighted)
+	    G->weights[y+diff] = G->weights[y];
+	}
+
+	
+	// finally copy back src2 edges to the place of src1
+	id = G->begin[src1];
+	for(edge_t y = 0; y< bufSize; y++) {
+	  G->begin[id] = buf[y];
+	  if(weighted)
+	    G->weights[id] = bufWeight[y];
+	  id++;
+	}
+
+	
+	assert(id == (G->begin[src1+1] + diff));
+	// Update begin values
+	for(node_t n = src+1; n <= src2; n++) {
+	  G->begin[n] += diff;
+	}
+    
+	
+	
+      } else if((G->begin[src1+1]-G->begin[src1]) > (G->begin[src2+1]-G->begin[src2])) {
+	// shift left
+	edge_t id =0;
+	// copy src 1 edges to buf
+	edge_t bufsize =  G->begin[src1+1] - G->begin[src1];
+	for (edge_t y= G->begin[src1];y < G->begin[src1+1]; y ++) {
+	  buf[id] = G->node_idx[y];
+	  if(weighted)
+	    bufWeight[id] = G->weights[y];
+	  id++;
+	}
+	
+       	
+	// move src2 edges to src1
+	id = G->begin[src1];
+	for (edge_t y= G->begin[src2];y < G->begin[src2+1]; y ++) {
+	  G->node_idx[id] = G->node_idx[y];
+	  if(weighted)
+	    G->weights[id] = G->weights[y];
+	  id++;
+	}
+
+	edge_t diff = (G->begin[src1+1]-G->begin[src1]) - (G->begin[src2+1]-G->begin[src2]);
+
+	assert(id == G->begin[src1+1] - diff);
+
+	// shift the edges of nodes in between
+	for(node_t n = src1+1; n < src2; n++) {
+	  for(edge_t y = G->begin[n]; y < G->begin[n+1];y++) {
+	    G->node_idx[y-diff] = G->node_idx[y];
+	    if(weighted)
+	      G->weights[y-diff] = G->weights[y];
+	  }
+	}
+
+
+	// finally copy back src1 edges to the place of src2
+	id = G->begin[src2] - diff;
+	for(edge_t y = 0; y< bufSize; y++) {
+	  G->begin[id] = buf[y];
+	  if(weighted)
+	    G->weights[id] = bufWeight[y];
+	  id++;
+	}
+
+
+	// Update begin values
+	for(node_t n = src+1; n <= src2; n++) {
+	  G->begin[n] -= diff;
+	}
+	
+      } else {
+	// equal degree
+	// just swap
+	edge_t id =0;
+	
+	// copy src 1 edges to buf
+	edge_t bufsize =  G->begin[src1+1] - G->begin[src1];
+	for (edge_t y= G->begin[src1];y < G->begin[src1+1]; y ++) {
+	  buf[id] = G->node_idx[y];
+	  if(weighted)
+	    bufWeight[id] = G->weights[y];
+	  id++;
+	}
+	
+	
+	
+	// move src2 edges to src1
+	id = G->begin[src1];
+	for (edge_t y= G->begin[src2];y < G->begin[src2+1]; y ++) {
+	  G->begin[id] = G->node_idx[y];
+	  if(weighted)
+	    G->weights[id] = G->weights[y];
+	  id++;
+	}
+	// 
+       assert(G->begin[src1+1]-G->begin[src1]) == (G->begin[src2+1]-G->begin[src2]);
+
+	// finally copy back src1 edges to the place of src2
+	id = G->begin[src2];
+	for(edge_t y = 0; y< bufSize; y++) {
+	  G->begin[id] = buf[y];
+	  if(weighted)
+	    G->weights[id] = bufWeight[y];
+	  id++;
+	}
+
+	// No need to update begin values as
+	// the degrees are same.
+	/* // Update begin values */
+	/* for(node_t n = src+1; n <= src2; n++) { */
+	/*   G->begin[n] -= diff; */
+	/* } */
+      }
+
+
+      
+      //src1 < src2
+      // assert(G->node_idx_src == NULL);
+      // assert(G->r_begin ==  NULL);
+      node_t id = 0;
+      
+      
+      
+    }
+
+    data.aed + = ((double) (newed1 + newed2) -  (ed1 + ed2) )/ (numNodes * numEdges);
+  }
+  
+  return G;
 }
 
-/** Reduce aed **/
-graph* compactNodes(graph *G) {
-  // TODO
 
-}
-
-graph* reduceclustering(graph* G) {
+/* Increase or decrese aed
+ * if flag = 0 decrease
+ * if flag = 1 increase
+*/
+graph* changeClustering(graph* G, gdata& data, int* stream, int itrs, int flag) {
   // TODO increase intercluster edges.
 }
-graph* increaseClustering(graph* G) {
-  // TODO increase intra cluster edges
-}
 
-graph* reduceDegreesd(graph* G) {
-  // TODO
-}
-graph* increaseDegreesd(graph* G) {
+
+
+/* Increase or decrese aed
+ * if flag = 0 decrease
+ * if flag = 1 increase
+*/
+graph* changeDegreesd(graph* G, gdata& data, int* stream, int itrs, int flag) {
+
+  data.changes = 0;
+  data.negativeChanges = 0;
+  int i;
+  stream = init_sprng(SPRNG_CMRG, 0, 1, SPRNG_SEED1, SPRNG_DEFAULT);
+  j=0;
+  node_t src[2*itrs];
+  for(i=0; i< itrs; i++) {
+    src[i+j] = (node_t) isprng(stream1) % numNodes;
+    j++;
+    src[i+j] = (node_t) isprng(stream1) % numNodes;
+  }
+
   // TODO
 }
 
