@@ -54,8 +54,8 @@ typedef struct MetaData {
   double aed;
   double density;
   double degreesd;
-  double custercoeff; 
-  node_t* degree;
+  double clustercoeff; 
+  //  node_t* degree;
   double* coeff;
   //  node_t* ed;
 }gdata;
@@ -273,6 +273,84 @@ inline void copydoublelist(node_t* l1, node_t* l2, node_t* c1, node_t* c2, edge_
   c1[i2] = l1[i1];
   c2[i2] = l2[i1];
 }
+
+
+
+void updateGdata(graph* G, gdata& data) {
+  data.changes = 0;
+  data.negativeChanges = 0;
+  data.maxDegree = 0;
+
+  int maxVal = 0;
+  long long degreesum = 0;
+
+#pragma omp parallel for reduction(+: degreeSum) reduction(max: maxVal)
+  for (v = 0; v < G->numNodes; v ++) {
+    if((G->begin[v+1] - G->begin[v]) > maVal) {
+      maxVal = (G->begin[v+1] - G->begin[v]);
+    }
+    degreeSum += (G->begin[v+1] - G->begin[v]);
+  }
+
+  data.maxDegree = maxVal;
+  data.degree = (double) degreeSum/G->numNodes;
+  data.density = (double) degreeSum/ ((G->numNodes)* (G->numNodes -1));
+  double degreesd = 0;
+  double xval;
+    
+#pragma omp parallel for reduction(+: degreesd) private(xval)
+  for (v = 0; v < G->numNodes; v ++) {
+    xval = (G->begin[v+1] - G->begin[v])
+      degreesd +=  (xval -data.degree) * (xval -data.degree) ;
+  }
+  data.degreesd = sqrt(degreesd/ G->numNodes);
+  data.aed = avgEdgeDistance(G);
+	
+  
+  data.coeff = (double*) malloc (sizeof(double) * G->numNodes);
+  /** coeff **/  
+#pragma omp parallel
+  {
+    node_t v;
+#pragma omp  for schedule(static)
+    for (v = 0; v < G->numNodes; v ++) {
+      edge_t u_idx;
+      data.coeff[v] = 0;
+      for (u_idx = G->begin[v]; u_idx < G->begin[v+1]; u_idx ++) {
+	node_t u = G->node_idx [u_idx];
+	edge_t w_idx;
+	for (w_idx = u_idx+1; w_idx < G->begin[v+1]; w_idx ++) {
+	  node_t w = G->node_idx [w_idx];
+	  if (isNeighbour(G,w,u)) {
+	    data.coeff[v] += 1;
+	  }
+	  if (isNeighbour(G,u,w)) {
+	    data.coeff[v] += 1;
+	  }
+	}
+      }
+      int neighbours = (int) (G->begin[v+1] - G->begin[v]);
+      if(neighbours > 1) {
+	data.coeff[v] = data.coeff[v]/(neighbours * (neighbours -1));
+      }
+    }
+  }
+
+  double clusterCoeff = 0;
+  node_t v;
+  for(v =0;v<G->numNodes;v++) {
+    clusterCoeff += localClustering[v];
+  }
+  clusterCoeff = clusterCoeff/G->numNodes;
+  data.clustercoeff = clusterCoeff;
+  
+}
+
+
+
+
+
+
 
 void merge(node_t* l1, node_t* l2, edge_t start, edge_t mid, edge_t end) {
   node_t t1 = start;  node_t t2 = mid;
@@ -1004,7 +1082,3 @@ graph* changeDegreesd(graph* G, gdata& data, int* stream, int itrs, int flag) {
 
   // TODO
 }
-
-
-
-

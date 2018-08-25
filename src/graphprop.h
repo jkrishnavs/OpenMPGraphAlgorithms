@@ -5,7 +5,7 @@ double aed;
 double sccindex;
 double clusterCoeff;
 
-void avgEdgeDistance(graph *G) {
+double avgEdgeDistance(graph *G) {
   long * edgeDistances =  (long*) malloc (sizeof(long) * G->numNodes);
   // long * edgeListSize =  (long*) malloc (sizeof(long) * G->numNodes);
 
@@ -49,6 +49,8 @@ void avgEdgeDistance(graph *G) {
   aed = aed/ G->numNodes;
   
   free(edgeDistances);
+
+  return aed;
 }
 
 
