@@ -753,6 +753,11 @@ graph* symmetricStocasticBlockModel(node_t k, double A, double B) {
 
 
 graph* planarRoadNetworkgraph() {
+  
+  if(degree < ) {
+
+  }
+  
   // TODO
   
 }
