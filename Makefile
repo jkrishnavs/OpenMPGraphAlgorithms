@@ -7,6 +7,7 @@ EM= -lenergymodule
 OBJFLAGS = -c -Wall
 DEBUGFLAGS = -g -Wall
 PRECOMPILE =  -E -P
+INCWITOUTBIGLITTLE=-I ./include/
 INC = -I ./include/ -I../Energymonitorlibrary/include/
 PRE = precompiled
 OBJ = obj
@@ -24,6 +25,7 @@ ONLINECORESFLAG=-D ONLINECORES=$(ONLINE_CORES)
 
 
 # (PARFOR_STATIC PARFOR_GUIDED PARFOR_DYNAMIC TASKLOOP)
+SRC=src
 
 SRCS=$(wildcard src/*.c)
 DEBUGS=$(wildcard src/*.c)
@@ -58,7 +60,14 @@ $(SRCS):
 endif
 	$(CC) -D $(CAPABILITY) $(ONLINECORESFLAG) $(INC)  $(LDFLAGS) $@  $(EM) -o $(BIN)/$(basename $(notdir $@))_static  
 	$(CC) -D $(CAPABILITY) $(ONLINECORESFLAG) $(INC) $(LDFLAGS) $(DYNAMICFL) $@ $(EM) -o $(BIN)/$(basename $(notdir $@))_dynamic 
-	$(CC) -D $(CAPABILITY) $(ONLINECORESFLAG) $(INC) $(LDFLAGS) $(GUIDEDFL) $@ $(EM) -o $(BIN)/$(basename $(notdir $@))_guided  
+	$(CC) -D $(CAPABILITY) $(ONLINECORESFLAG) $(INC) $(LDFLAGS) $(GUIDEDFL) $@ $(EM) -o $(BIN)/$(basename $(notdir $@))_guided
+
+
+preprocess:
+	$(CC) -D $(CAPABILITY) $(INCWITOUTBIGLITTLE)  $(LDFLAGS) -D PAR_CHUNKSIZE=1024  -o $(BIN)/preprocess $(SRC)/preprocess.c
+
+preprocess:
+	$(CC) -D $(CAPABILITY) $(INCWITOUTBIGLITTLE)  $(LDFLAGS) -D PAR_CHUNKSIZE=1024  -o $(BIN)/graphgenerator $(SRC)/graphgenerator.c
 
 
 dynamicwithchunkSize:

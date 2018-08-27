@@ -658,7 +658,7 @@ int runalgo(int argc,char** argv) {
   adj = atoi(argv[6]);
   if(argc < 7) {
     const char* argList[6] = {" <inputfile> " , "graphformat.txt","<outputfile>", "<outputpropfile>", "<outputmapfilename>", "<adjecencyflag>"};
-    printError(INCORRECT_ARG_LIST, NO_OF_ARGS, argList);
+    printError(INCORRECT_ARG_LIST, 6, argList);
     return -1;
 
   }

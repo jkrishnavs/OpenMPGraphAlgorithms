@@ -10,16 +10,6 @@
 #include "graphprop.h"
 #include "normaldistribution.h"
 
-graph* randomGenerator();
-graph* erdosRenyiGenerator();
-graph* rmatGenerator();
-graph* propertyControlledGraphGenerator();
-
-graph* callappropriategenerator();
-graph* StocasticBlockModel();
-graph* planarNetworkgraph();
-graph* diagonalGraphGenerator(boolean randomizedmidpoint);
-
 
 // TODO double check random number generation.
 
@@ -61,109 +51,106 @@ typedef struct MetaData {
 }gdata;
 
 
-typedef enum GraphProperty {
+typedef enum GraphPropertyFlag {
   degreeanddensity,
   clustercoeff,
   degreeaed,
   degreeanddegresd
-}
-
-GraphModel model;
-boolean weighted;
-nodes_t numNodes;
-edges_t numEdges;
-/*** Random Parameters ***/
-boolean selfloop;
-/***** Erdos Renyi *****/
-double edgeProbability;
-/***** RMAT **********/
-double a,b,c,d;
-/******** SSCA ********/
-node_t maxCliqueSize;
-node_t totClusters;
+}GraphPropertyFlag;
 
 
-/********** Graph prop value *******/
-/**
- NOTE: These parameters has higher preference over numEdges and numNodes.
- if these values contradict with the numEdges and numNodes 
- we update the numNodes and numEdges based on these values.
-**/
-double degree;
-double density;
-double clusteringCoeff;
-double aed;
-/******
- * standard deviation on degrees
- */
-double degreesd;
-/**
- ** If set to true the nodes will be 
- **/
-bool sortedSBMGraph; 
-
-bool degreeflag;
-bool densityflag;
-bool clusteringCoeffflag;
-bool aedflag;
-bool degreesdflag;
-
-
-/*****************/
-/** 
-   Acceptable error as a percentage.
-   the final graph properties will be
- in the range (prop*(1-err), prop*(1+err)). 
-**/
-double err;
-
-// TODO device a time out mechanism
-
-/*** Weight parameters ****/
-int maxWeight;
-int minWeight;
+typedef struct GraphProperty{
+  GraphModel model;
+  boolean weighted;
+  nodes_t numNodes;
+  edges_t numEdges;
+  /*** Random Parameters ***/
+  boolean selfloop;
+  /***** Erdos Renyi *****/
+  double edgeProbability;
+  /***** RMAT **********/
+  double a,b,c,d;
+  /******** SSCA ********/
+  node_t maxCliqueSize;
+  node_t totClusters;
+  /********** Graph prop value *******/
+  /**
+     NOTE: These parameters has higher preference over numEdges and numNodes.
+     if these values contradict with the numEdges and numNodes 
+     we update the numNodes and numEdges based on these values.
+  **/
+  double degree;
+  double density;
+  double clusteringCoeff;
+  double aed;
+  /******
+   * standard deviation on degrees
+   */
+  double degreesd;
+  /**
+   ** If set to true the nodes will be 
+   **/
+  bool sortedSBMGraph; 
+  
+  bool degreeflag;
+  bool densityflag;
+  bool clusteringCoeffflag;
+  bool aedflag;
+  bool degreesdflag;
+  /*****************/
+  /** 
+      Acceptable error as a percentage.
+      the final graph properties will be
+      in the range (prop*(1-err), prop*(1+err)). 
+  **/
+  double err;
+  
+  // TODO device a time out mechanism
+  
+  /*** Weight parameters ****/
+  int maxWeight;
+  int minWeight;
+} GraphProperty;
 
 
 
 
 /**** dafualt configs ******/
-void setbaseConfigs() {
-  weighted = false; // wf
-  selfloop = false; // sl
-  sortedSBMGraph = true; 
+void setbaseConfigs(GraphProperty& p) {
+  p.weighted = false; // wf
+  p.selfloop = false; // sl
+  p.sortedSBMGraph = true; 
 
-  degreeflag = false;
-  densityflag = false;
-  clusteringCoeffflag = false;
-  aedflag = false;
-  degreesdflag = false;
+  p.degreeflag = false;
+  p.densityflag = false;
+  p.clusteringCoeffflag = false;
+  p.aedflag = false;
+  p.degreesdflag = false;
 
 
-  model = Random; // m
-  numNodes = 100000; //n
-  numEdges = 1000000; // e
-  edgeProbability = 0.0001; //ep
+  p.model = Random; // m
+  p.numNodes = 100000; //n
+  p.numEdges = 1000000; // e
+  p.edgeProbability = 0.0001; //ep
   
-  a = 0.45; // a
-  b = 0.15; // b
-  c = 0.15; // c
-  d = 0.25; // d
+  p.a = 0.45; // a
+  p.b = 0.15; // b
+  p.c = 0.15; // c
+  p.d = 0.25; // d
 
 
   /**** Ma Clique Size **********/
-  maxCliqueSize = 4;
+  p.maxCliqueSize = 4;
 
   /*** Properties of interest *******/
-  degree  = 10;// dg
-  density = 0.0001; // dn
-  clusteringCoeff = 0.1; // cc
-  aedbase = 0.33; // aed
-  degreesd = 0.2; //dsd
-  err = 1; /*1%*/ // err
-  maxWeight = 100; //mw
-  minWeight = 1; // iw
-
- 
+  p.degree  = 10;// dg
+  p.density = 0.0001; // dn
+  p.clusteringCoeff = 0.1; // cc
+  p.aedbase = 0.33; // aed
+  p.degreesd = 0.2; //dsd
+  p.err = 1; /*1%*/ // err
+  p.maxWeight = 100; //mw
+  p.minWeight = 1; // iw
 }
 
 void updateConfigs(const char* configfile) {
@@ -180,6 +167,18 @@ void updateConfigs(const char* configfile) {
   
   
 }
+
+graph* randomGenerator(const GraphProperty& p);
+graph* erdosRenyiGenerator(const GraphProperty& p);
+graph* rmatGenerator(const GraphProperty& p);
+graph* propertyControlledGraphGenerator(GraphProperty& p);
+
+graph* callappropriategenerator(GraphPorperty& p);
+graph* StocasticBlockModel(GraphProperty& p);
+graph* lowdegreeNetworkgraph(const GraphProperty& p);
+graph* diagonalGraphGenerator(boolean randomizedmidpoint, const GraphPorperty& p);
+
+
 
 
 
@@ -224,27 +223,27 @@ graph* callappropriategenerator() {
 
 
 
-graph* randomGenerator() {
+graph* randomGenerator(const GraphProperty& p) {
   int *stream1, *stream2;
   FILE* outfp;
     
   stream1 = init_sprng(SPRNG_CMRG, 0, 1, SPRNG_SEED1, SPRNG_DEFAULT);
   stream2 = init_sprng(SPRNG_CMRG, 0, 1, SPRNG_SEED2, SPRNG_DEFAULT);
 
-  graph* G = allocatememoryforGraph(numNodes, numEdges);
+  graph* G = allocatememoryforGraph(p.numNodes, p.numEdges);
   G->r_node_idx = (node_t) malloc (numEdges * sizeof(node_t));
 
  
   
-  for(edge_t i = 0; i< numEdges; i++) {
-    node_t u = (node_t) isprng(stream1) % numNodes;
-    node_t v = (node_t) isprng(stream1) % numNodes;
-    if((u == v) && (selfloop == false)) {
+  for(edge_t i = 0; i< p.numEdges; i++) {
+    node_t u = (node_t) isprng(stream1) % p.numNodes;
+    node_t v = (node_t) isprng(stream1) % p.numNodes;
+    if((u == v) && (p.selfloop == false)) {
       i--;
       continue;
     }
     if(weighted) {
-      int w = (int)( minWeight + ((double )(maxWeight - minWeight)) * sprng(stream2));
+      int w = (int)( p.minWeight + ((double )(p.maxWeight - p.minWeight)) * sprng(stream2));
       G->weights[i] = w;
     }
     G->node_idx[i] = v;
@@ -252,10 +251,10 @@ graph* randomGenerator() {
     G->begin[i+1]++; // array start with 0
   }
   
-  for(node_t n = 1;n< numNodes; n++) {
+  for(node_t n = 1;n< p.numNodes; n++) {
     G->begin[n+1] += G->begin[n];
   }
-  doubleMergeSort(G->r_node_idx, G->node_idx, 0, numEdges);
+  doubleMergeSort(G->r_node_idx, G->node_idx, 0, p.numEdges);
   return G;
 }
 
@@ -275,7 +274,7 @@ inline void copydoublelist(node_t* l1, node_t* l2, node_t* c1, node_t* c2, edge_
 }
 
 
-
+/*** Update Graph Meta data **/
 void updateGdata(graph* G, gdata& data) {
   data.changes = 0;
   data.negativeChanges = 0;
@@ -454,7 +453,7 @@ graph* allocateMemoryforGraph(nodes_t n, edges_t m) {
 }
 
 
-graph* erdosRenyiGenerator() {
+graph* erdosRenyiGenerator(const GraphProperty& p) {
   int *stream1, *stream2;
   stream1 = init_sprng(SPRNG_CMRG, 0, 1, SPRNG_SEED1, SPRNG_DEFAULT);
   stream2 = init_sprng(SPRNG_CMRG, 0, 1, SPRNG_SEED2, SPRNG_DEFAULT);
@@ -464,26 +463,25 @@ graph* erdosRenyiGenerator() {
    * GTGraph code and  licence etc see GTgraph folder
    **/
   edge_t maxEdges = 0;
-  numEdges = 0;
-  if(selfloop == false) {
+  if(p.selfloop == false) {
     /* Should cover all edges 90 percent of time*/
-    maxEdges = (edge_t) ( 1.1 * ((edgeProbablity) * numNodes) * (numNodes -1));
+    maxEdges = (edge_t) ( 1.1 * ((p.edgeProbablity) * p.numNodes) * (p.numNodes -1));
   } else {
-    maxEdges = (edge_t) ( 1.1 * ((edgeProbablity) * numNodes) * (numNodes));
+    maxEdges = (edge_t) ( 1.1 * ((p.edgeProbablity) * p.numNodes) * (p.numNodes));
   }
-  graph *G = allocatememoryforGraph(n,maxEdges);
+  graph *G = allocatememoryforGraph(n, maxEdges);
    
   /* Write the no. of edges later */
 
-  edg = 0;
-  for (node_t i=0; i<numNodes; i++) {
+  edge_t edg = 0;
+  for (node_t i=0; i<p.numNodes; i++) {
     G->begin[i] = edg;
-    for (node_t j=0; j<numNodes; j++) {
-      if ((i==j) && (selfloop == false))		
+    for (node_t j=0; j<p.numNodes; j++) {
+      if ((i==j) && (p.selfloop == false))		
 	continue;
-      if (p > sprng(stream1)) {
+      if (p.edgeProbablity > sprng(stream1)) {
 	if(weighted) {
-	  int w = (int)( minWeight + ((double )(maxWeight - minWeight)) * sprng(stream2));
+	  int w = (int)( p.minWeight + ((double )(p.maxWeight - p.minWeight)) * sprng(stream2));
 	  G->weights[edg] = w;
 	}
 	G->node_idx[edg] = j;
@@ -553,7 +551,7 @@ void varyParams(double* a, double* b, double* c, double* d, int* stream3,
 
 
 
-graph* rmatGenerator() {
+graph* rmatGenerator(const GraphProperty& p) {
   /**
    * NOTICE: The base algorithm follows GT Graph generators. For original
    * GTGraph code and  licence etc see GTgraph folder
@@ -566,7 +564,7 @@ graph* rmatGenerator() {
   double a0, b0, c0, d0;
   node_t u, v;
   for(edge_t it = 0; it< numEdges; it++) {
-    a0 = a; b0 = b; c0 = c; d0= d;
+    a0 = p.a; b0 = p.b; c0 = p.c; d0= p.d;
     u = 0;
     v = 0;
     step = numNodes/2;
@@ -576,13 +574,13 @@ graph* rmatGenerator() {
       varyParams(&a0, &b0, &c0, &d0, stream3, stream4);
     }
 
-    if(selfloop == false && (u == v)) {
+    if(p.selfloop == false && (u == v)) {
       it --;
       continue;
     }
 
     if(weighted) {
-      w = (int)( minWeight + ((double )(maxWeight - minWeight)) * sprng(stream2));
+      w = (int)( p.minWeight + ((double )(p.maxWeight - minWeight)) * sprng(stream2));
       G->weights[edg] = w;
     }
     G->node_idx[i] = v;
@@ -591,24 +589,24 @@ graph* rmatGenerator() {
     
   }
   // sort and Normalize
-  for(node_t n = 1;n< numNodes; n++) {
+  for(node_t n = 1;n< p.numNodes; n++) {
     G->begin[n+1] += G->begin[n];
   }
 
-  doubleMergeSort(G->r_node_idx, G->node_idx, 0, numEdges);
+  doubleMergeSort(G->r_node_idx, G->node_idx, 0, p.numEdges);
   return G;  
 
 }
 
-graph* propertyControlledGraphGenerator() {
-  numNodes = (nodes_t) ( density / degree );
+graph* propertyControlledGraphGenerator(GraphProperty& p) {
+  p.numNodes = (nodes_t) ( p.density / p.degree );
   if(densityflag == true && degreeflag == true) {
-    numNodes = (nodes_t) ( density / degree );
-    numEdges = (edges_t) ( degree * numNodes );
+    p.numNodes = (nodes_t) ( p.density / p.degree );
+    p.numEdges = (edges_t) ( p.degree * p.numNodes );
   } else if (densityflag == true) {
-    numEdges = (edges_t) ( density * numNodes * numNodes);
+    p.numEdges = (edges_t) ( p.density * p.numNodes * p.numNodes);
   } else if (degreeflag == true) {
-    numEdges = (edges_t) ( degree * numNodes);
+    p.numEdges = (edges_t) ( p.degree * p.numNodes);
   }
   // Associate expected clustering coefficient.
   // degree sd
@@ -655,8 +653,8 @@ node_t getCommunityId(double* vec, double randComm, node_t len) {
  * communities i and j.
  * k : number of communities
  **/
-  graph* SBMGraphGenerator(double* probablilityVector, double *edgeProbablilityMatrix, node_t k) {
-  node_t* comm  = (node_t*) malloc (numNodes * sizeof(nodes_t));
+graph* SBMGraphGenerator(double* probablilityVector, double *edgeProbablilityMatrix, node_t k, const GraphProperty& p) {
+  node_t* comm  = (node_t*) malloc (p.numNodes * sizeof(nodes_t));
 
   int* stream1,* stream2;
   
@@ -675,13 +673,13 @@ node_t getCommunityId(double* vec, double randComm, node_t len) {
    * The expected number of edges is assumed to be saved in numEdges.
    * before this point.
    ****/
-  maxEdges = (edges_t) (1.1 *numEdges);
-  graph* G =  allocateMemoryforGraph(numNodes, maxEdges);
+  maxEdges = (edges_t) (1.1 *p.numEdges);
+  graph* G =  allocateMemoryforGraph(p.numNodes, maxEdges);
   node_t edg = 0;
-  for(i=0; i< numNodes; i++) {
+  for(i=0; i< p.numNodes; i++) {
     G->begin[i] = edg;
-    for (j=0; j< numNodes; j++) {
-      if(selfloop == false && i == j)
+    for (j=0; j< p.numNodes; j++) {
+      if(p.selfloop == false && i == j)
 	continue;
       double p = edgeProbabilityMatrix[(comm[i])*k + comm[j]];
       if (p > sprng(stream2)) {
@@ -694,7 +692,7 @@ node_t getCommunityId(double* vec, double randComm, node_t len) {
       }
     }
   }
-  G->begin[numNodes] = edg;
+  G->begin[p.numNodes] = edg;
   assert(maxEdges >= edg);
   free(probablilityVector);
   free(edgeProbablilityMatrix);
@@ -714,21 +712,21 @@ graph* StocasticBlockModel() {
  * B is the intercluster edge probability
  * Ideally, A > B 
  */
-graph* symmetricStocasticBlockModel(node_t k, double A, double B) {
+graph* symmetricStocasticBlockModel(node_t k, double A, double B, GraphPorperty& p) {
   double *probvec = (double *) malloc((k+1) * sizeof(double));
   double *edgeProbMatrix = (double *) malloc ((k*k) * sizeof(double));
   double nodeprob = (double ) ( (double)PVECTORSCALE / k);
 
 
-  double numClusters = (double) numNodes / k;
+  double numClusters = (double) p.numNodes / k;
   /*** Calculate the expected number of edges ***/
-  if(selfloop == true) {
+  if(p.selfloop == true) {
     edge_t intraClusterEdges = (edge_t) numClusters * (k*k) * A;
-    edge_t interClusterEdges = [(double) (numNodes * numNodes) - numClusters * (k*k)] * B;
+    edge_t interClusterEdges = [(double) (p.numNodes * p.numNodes) - p.numClusters * (k*k)] * B;
     numEdges = intraClusterEdges + interClusterEdges;  
   } else {
     edge_t intraClusterEdges = (edge_t) numClusters * (k*(k-1)) * A;
-    edge_t interClusterEdges = [(double) (numNodes * (numNodes - 1)) - numClusters * (k*(k -1))] * B;
+    edge_t interClusterEdges = [(double) (p.numNodes * (p.numNodes - 1)) - p.numClusters * (k*(k -1))] * B;
     numEdges = intraClusterEdges + interClusterEdges;  
   }
   
@@ -752,21 +750,75 @@ graph* symmetricStocasticBlockModel(node_t k, double A, double B) {
 }
 
 
-graph* planarRoadNetworkgraph() {
-  
-  if(degree < ) {
+graph* lowdegreeNetworkgraph(const GraphProperty& p) {
 
+  int flag = 0;
+
+  double scale = 0;
+  nodes_t nNodes = (nodes_t) (p.degree/ p.density);
+  edges_t edges = (edges_t) ((double)nNodes * p.degree);
+  double vVal = log(nNodes/2);
+  // (pi^2/6)
+  if(p.degree < 3.28) {
+    flag = 2;
+    scale = p.degree/3.28;
+  } else if(p.degree < vVal) {
+    flag = 1;
+    scale = p.degree/vVal;
   }
-  
+
   // TODO
+  assert(flag !=0);
   
+  edge_t maxEdges = 0;
+  
+  assert(p.selfloop == 0);
+  maxEdges = (edge_t) ( 1.1 * (edges));
+
+  graph *G = allocatememoryforGraph(n, maxEdges);
+
+  int *stream1, *stream2;
+  stream1 = init_sprng(SPRNG_CMRG, 0, 1, SPRNG_SEED1, SPRNG_DEFAULT);
+  stream2 = init_sprng(SPRNG_CMRG, 0, 1, SPRNG_SEED2, SPRNG_DEFAULT);
+
+  edge_t edg = 0;
+  node_t aed;
+  for (node_t i=0; i<p.numNodes; i++) {
+    G->begin[i] = edg;
+    for (node_t j=0; j<p.numNodes; j++) {
+      if ((i==j))		
+	continue;
+      double prob = 0;
+      if(i<j)
+	aed = (i-j);
+      else
+	aed = (j-i);
+      if(flag == 1) {
+	prob =  scale * 1/aed;
+      } else if(flag == 2){
+	prob = scale / (aed*aed);
+      }
+      
+      if (prob > sprng(stream1)) {
+	if(weighted) {
+	  int w = (int)( p.minWeight + ((double )(p.maxWeight - p.minWeight)) * sprng(stream2));
+	  G->weights[edg] = w;
+	}
+	G->node_idx[edg] = j;
+	edg ++;	  
+      }
+    }
+  }
+  G->begin[numNodes] = edg;
+  assert(edg <= maxEdges);
+  return G;    
 }
 
-graph* diagonalGraphGenerator(boolean randomizedmidpoint) {
-  numEdges = (edges_t) degree * numNodes;
+graph* diagonalGraphGenerator(boolean randomizedmidpoint,const  GraphProperty& p) {
+  edges_t numEdges = (edges_t) p.degree * p.numNodes;
   node_t i;
   maxEdges = (edges_t) (1.1 *numEdges);
-  graph* G= allocateMemoryforGraph(numNodes, maxNodes);
+  graph* G= allocateMemoryforGraph(p.numNodes, maxNodes);
   data.z1 = 0;
   data.generate = false;
   int* stream;
@@ -778,9 +830,9 @@ graph* diagonalGraphGenerator(boolean randomizedmidpoint) {
 
   
   node_t edg = 0;
-  for(i=0; i< numNodes; i++) {
+  for(i=0; i< p.numNodes; i++) {
     G->begin[i] = edg;
-    node_t idegree = (node_t) generateGaussiandistriution(degree, degreesd, data);
+    node_t idegree = (node_t) generateGaussiandistriution(p.degree, p.degreesd, data);
     node_t midPoint; node_t startPoint;
     if(randomizedmidpoint) {
       midPoint = (node_t) ispring(stream1) % idegree;
@@ -796,10 +848,10 @@ graph* diagonalGraphGenerator(boolean randomizedmidpoint) {
     }
     startPoint = i - midPoint;
     node_t endPoint = startPoint + idegree;
-    if(selfloop ==  false)
+    if(p.selfloop ==  false)
       endPoint++;
     for(node_t j =startPoint; j < endPoint;j++) {
-      if ((i==j) && (selfloop == false))		
+      if ((i==j) && (p.selfloop == false))		
 	continue;
       if(weighted) {
 	int w = (int)( minWeight + ((double )(maxWeight - minWeight)) * sprng(stream2));
