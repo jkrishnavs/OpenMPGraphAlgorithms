@@ -2,7 +2,7 @@
  * Original base algorithm from GTGraph. 
  ****/
 
-#include<unistd.h>
+#include <unistd.h>
 #include"graph.h"
 #include "mainFunctions.h"
 #include "print.h"
@@ -16,7 +16,7 @@
 
 
 
-graph* allocateMemoryforGraph(nodes_t n, edges_t m);
+graph* allocateMemoryforGraph(node_t n, edge_t m);
 void doubleMergeSort(node_t* l1, node_t* l2, edge_t left, edge_t right);
 void merge(node_t* l1, node_t* l2, edge_t left, edge_t mid, edge_t right);
 void choosePartition(node_t* u, node_t* v, node_t step, int* stream1);
@@ -61,11 +61,11 @@ typedef enum GraphPropertyFlag {
 
 typedef struct GraphProperty{
   GraphModel model;
-  boolean weighted;
-  nodes_t numNodes;
-  edges_t numEdges;
+  bool weighted;
+  node_t numNodes;
+  edge_t numEdges;
   /*** Random Parameters ***/
-  boolean selfloop;
+  bool selfloop;
   /***** Erdos Renyi *****/
   double edgeProbability;
   /***** RMAT **********/
@@ -173,10 +173,10 @@ graph* erdosRenyiGenerator(const GraphProperty& p);
 graph* rmatGenerator(const GraphProperty& p);
 graph* propertyControlledGraphGenerator(GraphProperty& p);
 
-graph* callappropriategenerator(GraphPorperty& p);
+graph* callappropriategenerator(GraphProperty& p);
 graph* StocasticBlockModel(GraphProperty& p);
 graph* lowdegreeNetworkgraph(const GraphProperty& p);
-graph* diagonalGraphGenerator(boolean randomizedmidpoint, const GraphPorperty& p);
+graph* diagonalGraphGenerator(bool randomizedmidpoint, const GraphProperty& p);
 
 
 
@@ -439,7 +439,7 @@ void doubleMergeSort(node_t* l1, node_t* l2, edge_t left, edge_t right) {
 
 
 
-graph* allocateMemoryforGraph(nodes_t n, edges_t m) {
+graph* allocateMemoryforGraph(node_t n, edge_t m) {
   graph *G = (graph*) malloc (sizeof(graph));
   G->begin = (edge_t*) malloc( (n+1)* sizeof(edge_t));
   G->node_idx = (node_t*) malloc(m * sizeof(node_t));
@@ -599,14 +599,14 @@ graph* rmatGenerator(const GraphProperty& p) {
 }
 
 graph* propertyControlledGraphGenerator(GraphProperty& p) {
-  p.numNodes = (nodes_t) ( p.density / p.degree );
+  p.numNodes = (node_t) ( p.density / p.degree );
   if(densityflag == true && degreeflag == true) {
-    p.numNodes = (nodes_t) ( p.density / p.degree );
-    p.numEdges = (edges_t) ( p.degree * p.numNodes );
+    p.numNodes = (node_t) ( p.density / p.degree );
+    p.numEdges = (edge_t) ( p.degree * p.numNodes );
   } else if (densityflag == true) {
-    p.numEdges = (edges_t) ( p.density * p.numNodes * p.numNodes);
+    p.numEdges = (edge_t) ( p.density * p.numNodes * p.numNodes);
   } else if (degreeflag == true) {
-    p.numEdges = (edges_t) ( p.degree * p.numNodes);
+    p.numEdges = (edge_t) ( p.degree * p.numNodes);
   }
   // Associate expected clustering coefficient.
   // degree sd
@@ -654,7 +654,7 @@ node_t getCommunityId(double* vec, double randComm, node_t len) {
  * k : number of communities
  **/
 graph* SBMGraphGenerator(double* probablilityVector, double *edgeProbablilityMatrix, node_t k, const GraphProperty& p) {
-  node_t* comm  = (node_t*) malloc (p.numNodes * sizeof(nodes_t));
+  node_t* comm  = (node_t*) malloc (p.numNodes * sizeof(node_t));
 
   int* stream1,* stream2;
   
@@ -673,7 +673,7 @@ graph* SBMGraphGenerator(double* probablilityVector, double *edgeProbablilityMat
    * The expected number of edges is assumed to be saved in numEdges.
    * before this point.
    ****/
-  maxEdges = (edges_t) (1.1 *p.numEdges);
+  maxEdges = (edge_t) (1.1 *p.numEdges);
   graph* G =  allocateMemoryforGraph(p.numNodes, maxEdges);
   node_t edg = 0;
   for(i=0; i< p.numNodes; i++) {
@@ -712,7 +712,7 @@ graph* StocasticBlockModel() {
  * B is the intercluster edge probability
  * Ideally, A > B 
  */
-graph* symmetricStocasticBlockModel(node_t k, double A, double B, GraphPorperty& p) {
+graph* symmetricStocasticBlockModel(node_t k, double A, double B, GraphProperty& p) {
   double *probvec = (double *) malloc((k+1) * sizeof(double));
   double *edgeProbMatrix = (double *) malloc ((k*k) * sizeof(double));
   double nodeprob = (double ) ( (double)PVECTORSCALE / k);
@@ -755,8 +755,8 @@ graph* lowdegreeNetworkgraph(const GraphProperty& p) {
   int flag = 0;
 
   double scale = 0;
-  nodes_t nNodes = (nodes_t) (p.degree/ p.density);
-  edges_t edges = (edges_t) ((double)nNodes * p.degree);
+  node_t nNodes = (node_t) (p.degree/ p.density);
+  edge_t edges = (edge_t) ((double)nNodes * p.degree);
   double vVal = log(nNodes/2);
   // (pi^2/6)
   if(p.degree < 3.28) {
@@ -814,10 +814,10 @@ graph* lowdegreeNetworkgraph(const GraphProperty& p) {
   return G;    
 }
 
-graph* diagonalGraphGenerator(boolean randomizedmidpoint,const  GraphProperty& p) {
-  edges_t numEdges = (edges_t) p.degree * p.numNodes;
+graph* diagonalGraphGenerator(bool randomizedmidpoint,const  GraphProperty& p) {
+  edge_t numEdges = (edge_t) p.degree * p.numNodes;
   node_t i;
-  maxEdges = (edges_t) (1.1 *numEdges);
+  maxEdges = (edge_t) (1.1 *numEdges);
   graph* G= allocateMemoryforGraph(p.numNodes, maxNodes);
   data.z1 = 0;
   data.generate = false;
@@ -869,7 +869,7 @@ graph* diagonalGraphGenerator(boolean randomizedmidpoint,const  GraphProperty& p
 // if set we will accept random negative
 // changes to improve the chances of avoiding
 // falling into a local minima.
-boolean globalMinimaFlag = false;
+bool globalMinimaFlag = false;
 #define biasedCoinFlip 30
  
 /* Increase or decrese aed
