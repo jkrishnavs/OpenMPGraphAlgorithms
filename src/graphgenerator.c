@@ -35,7 +35,7 @@ typedef enum GraphModel {
 
 
 
-// TODO double or float for individual degree, coeff and ed ?
+// TO CHECK: double or float of individual degree, coeff and ed ?
 typedef struct MetaData {
   int changes;
   int negativeChanges;
@@ -52,15 +52,16 @@ typedef struct MetaData {
 
 
 typedef enum GraphPropertyFlag {
+  allproperty,
   degreeanddensity,
   clustercoeff,
   degreeaed,
-  degreeanddegresd
+  degreeanddegresd,
 }GraphPropertyFlag;
-
 
 typedef struct GraphProperty{
   GraphModel model;
+  GraphPropertyFlag property;
   bool weighted;
   node_t numNodes;
   edge_t numEdges;
@@ -115,7 +116,7 @@ typedef struct GraphProperty{
 
 
 
-/**** dafualt configs ******/
+/**** default configs ******/
 void setbaseConfigs(GraphProperty& p) {
   p.weighted = false; // wf
   p.selfloop = false; // sl
@@ -153,31 +154,45 @@ void setbaseConfigs(GraphProperty& p) {
   p.minWeight = 1; // iw
 }
 
-void updateConfigs(const char* configfile) {
+bool updateConfigs(const char* configfile, GraphProperty& p) {
   FILE *f;
 
-  f = fopen(filename, "r");
+  f = fopen(configfile, "r");
   if(f == NULL) {
     printError(CONFIG_FILE_NOT_FOUND, 0, NULL);
-    return NULL;
+    return false;
   }
+  
+  
   // we assume the first entry in the config file specifies the model
   // of graph generation.
   // TODO read configs
   
+  /*
+    TODO allow multiple graph property input options
+    right now we allow only allproperty option.
+  */
+
+  if()
   
 }
 
 graph* randomGenerator(const GraphProperty& p);
 graph* erdosRenyiGenerator(const GraphProperty& p);
 graph* rmatGenerator(const GraphProperty& p);
-graph* propertyControlledGraphGenerator(GraphProperty& p);
+//graph* propertyControlledGraphGenerator(GraphProperty& p);
 
 graph* callappropriategenerator(GraphProperty& p);
 graph* StocasticBlockModel(GraphProperty& p);
 graph* lowdegreeNetworkgraph(const GraphProperty& p);
 graph* diagonalGraphGenerator(bool randomizedmidpoint, const GraphProperty& p);
+graph* SBMGraphGenerator(double* probablilityVector, double *edgeProbablilityMatrix, node_t k, const GraphProperty& p);
+graph* symmetricStocasticBlockModel(node_t k, double A, double B, GraphProperty& p);
 
+graph* diagonalGraphGenerator(bool randomizedmidpoint,const  GraphProperty& p);
+graph* adjustAED(graph *G, gdata& data, int* stream, int itrs, int flag);
+graph* changeClustering(graph* G, gdata& data, int* stream, int itrs, int flag);
+graph* changeDegreesd(graph* G, gdata& data, int* stream, int itrs, int flag);
 
 
 
@@ -186,11 +201,13 @@ int runalgo(int argc, char** argv) {
 
   if(argc > 4) {
     const char* argList[3] = {" <configfile.conf>" , "<outputfile.edges>","<propfile.prop>"};
-    printError(INCORRECT_ARG_LIST, NO_OF_ARGS, argList);
+    printError(INCORRECT_ARG_LIST, 3, argList);
     return -1;
   }
-  updateConfigs(configfile);
-  graph * G = callappropriategenerator();
+  GraphProperty p;
+  setbaseConfigs(&p);  
+  updateConfigs(argv[1], &p);
+  graph * G = callappropriategenerator(&p);
   assert(G != NULL);
   writeBackGraph(G, argv[2]);
 
@@ -209,16 +226,19 @@ int runalgo(int argc, char** argv) {
   return 0;
 }
 
-graph* callappropriategenerator() {
-  if(model == Random) {
-    return randomGenerator();
-  } else if (model  ==   ErdosRenyi) {
+graph* callappropriategenerator(GraphProperty& p) {
+  if(p.model == Random) {
+    return randomGenerator(p);
+  } else if (p.model  ==   ErdosRenyi) {
     return erdosRenyiGenerator();
-  } else if (model == RMAT) {
-    return rmatGenerator();
-  } else if (model == SSCA) {
-    return SSCAGenerator();
-  } else if 
+  } else if (p.model == RMAT) {
+    return rmatGenerator(p);
+  } else if (p.model == SSCA) {
+    return SSCAGenerator(p);
+  } else if (p.model == SBM || p.model ==LSSBM ||
+	     p.model == SSBM || p.model == PCGG) {
+    return StocasticBlockModel(p);
+  }
 }
 
 
@@ -598,24 +618,23 @@ graph* rmatGenerator(const GraphProperty& p) {
 
 }
 
-graph* propertyControlledGraphGenerator(GraphProperty& p) {
-  p.numNodes = (node_t) ( p.density / p.degree );
-  if(densityflag == true && degreeflag == true) {
-    p.numNodes = (node_t) ( p.density / p.degree );
-    p.numEdges = (edge_t) ( p.degree * p.numNodes );
-  } else if (densityflag == true) {
-    p.numEdges = (edge_t) ( p.density * p.numNodes * p.numNodes);
-  } else if (degreeflag == true) {
-    p.numEdges = (edge_t) ( p.degree * p.numNodes);
-  }
-  // Associate expected clustering coefficient.
-  // degree sd
-  // aed.
+/* graph* propertyControlledGraphGenerator(GraphProperty& p) { */
+/*   p.numNodes = (node_t) ( p.density / p.degree ); */
+/*   if(densityflag == true && degreeflag == true) { */
+/*     p.numNodes = (node_t) ( p.density / p.degree ); */
+/*     p.numEdges = (edge_t) ( p.degree * p.numNodes ); */
+/*   } else if (densityflag == true) { */
+/*     p.numEdges = (edge_t) ( p.density * p.numNodes * p.numNodes); */
+/*   } else if (degreeflag == true) { */
+/*     p.numEdges = (edge_t) ( p.degree * p.numNodes); */
+/*   } */
+/*   // Associate expected clustering coefficient. */
+/*   // degree sd */
+/*   // aed. */
   
 
-  // TODO
   
-}
+/* } */
 
 
 /***
@@ -699,7 +718,7 @@ graph* SBMGraphGenerator(double* probablilityVector, double *edgeProbablilityMat
   return G;
 }
 
-graph* StocasticBlockModel() {
+graph* StocasticBlockModel(GraphProperty& p) {
   
   // TODO
   
@@ -767,7 +786,6 @@ graph* lowdegreeNetworkgraph(const GraphProperty& p) {
     scale = p.degree/vVal;
   }
 
-  // TODO
   assert(flag !=0);
   
   edge_t maxEdges = 0;
@@ -865,7 +883,7 @@ graph* diagonalGraphGenerator(bool randomizedmidpoint,const  GraphProperty& p) {
 }
 
 //
-// TODO have a global minima flag.
+// We have a global minima flag.
 // if set we will accept random negative
 // changes to improve the chances of avoiding
 // falling into a local minima.
@@ -877,7 +895,6 @@ bool globalMinimaFlag = false;
  * if flag = 1 increase
 */
 graph* adjustAED(graph *G, gdata& data, int* stream, int itrs, int flag) {
-  // TODO
   data.changes = 0;
   data.negativeChanges = 0;
   int i;
@@ -1114,6 +1131,7 @@ graph* adjustAED(graph *G, gdata& data, int* stream, int itrs, int flag) {
  * if flag = 1 increase
 */
 graph* changeClustering(graph* G, gdata& data, int* stream, int itrs, int flag) {
+  
   // TODO increase intercluster edges.
 }
 

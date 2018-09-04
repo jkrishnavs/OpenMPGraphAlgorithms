@@ -1,10 +1,11 @@
 #include<stdlib.h>
 #include<math.h>
 #include<limits.h>
+
 typedef struct threadLocalDataBoxMuller {
   double z1;
   bool generate;
-}tldBoxMuller;
+} tldBoxMuller;
 
 
 /****
@@ -13,7 +14,7 @@ typedef struct threadLocalDataBoxMuller {
  * See https://en.wikipedia.org/wiki/Box-Muller_transform
  * for more details.
  ****/
-double generateGaussiandistibution(double mu, double sigma,const tld_BoxMuller& d) {
+double generateGaussiandistibution(double mu, double sigma,const tldBoxMuller& d) {
 
   
   static const double epsilon = std::numeric_limits<double>::min();
