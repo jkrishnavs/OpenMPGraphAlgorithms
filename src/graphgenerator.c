@@ -95,7 +95,7 @@ typedef struct GraphProperty{
   
   bool degreeflag;
   bool densityflag;
-  bool clusteringCoeffflag;
+  bool ccflag;
   bool aedflag;
   bool degreesdflag;
   /*****************/
@@ -166,14 +166,36 @@ bool updateConfigs(const char* configfile, GraphProperty& p) {
   
   // we assume the first entry in the config file specifies the model
   // of graph generation.
-  // TODO read configs
   
+  
+  char fileType[50];
+  fscanf(fp,"%s", fileType);
+
   /*
     TODO allow multiple graph property input options
     right now we allow only allproperty option.
   */
+  if(strcmp(fileType,"allproperty") == 0) {
+    p.property = allproperty;
+    while (!feof (fp)) {
+      char propType[50];
+      double val;
+      fscanf(fp, "%s %f", propType, val);
+      if(strcmp(propType,"degree") == 0) {
+	p.degree = val;
+      } else if(strcmp(propType,"density") == 0) {
+	p.density = val;
+      } else if(strcmp(propType,"cc") == 0) {
+	p.clusteringCoeff = val;
+      } else if(strcmp(propType,"aed") == 0) {
+	p.aed = val;
+      } else if(strcmp(propType,"dsd") == 0) {
+	p.degreesd = val;
+      } 
+    }
+  } else {
 
-  if()
+  }
   
 }
 
@@ -718,10 +740,39 @@ graph* SBMGraphGenerator(double* probablilityVector, double *edgeProbablilityMat
   return G;
 }
 
+
+
 graph* StocasticBlockModel(GraphProperty& p) {
   
-  // TODO
-  
+  if(p.degreesd < 0.5) {
+    // symmetric model
+    // if clustering coefficent is high
+    // then the cluster size is closer to
+    //
+
+    nodes_t clusterSize = (nodes_t) p.degree+1;
+    nodes_t numNodes = (nodes_t) ( p.degree/ p.density);
+    nodes_t k = (nodes_t) (numNodes / clusterSize);
+    p.numNodes = numNodes;
+    double sizefrac = ((double) clusterSize / numNodes);
+
+    double edgprop = cbrt(p.clusteringCoeff * 0.9);
+    // currently decided 10% of clustering coefficnt value should
+    // come from iter cluster edges.
+    // TODO make it flexible
+    // for more details on derivations see sbm.pdf in docs
+    // folder
+    double A = edgprop;
+    assert(0< A && A < 1);
+    double B = (1 -A) * (clusterSize/numNodes);
+    symmetricStocasticBlockModel(k, A, B, p);
+    if(p.aed < 0.2) {
+      // TODO sort
+    }
+    
+  } else {
+    // TODO
+  }
   
 }
 
