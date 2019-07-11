@@ -16,7 +16,7 @@ typedef struct threadLocalDataBoxMuller {
  ****/
 
 
-double generateGaussiandistibution(double mu, double sigma, tldBoxMuller& d) {
+double generateGaussiandistribution(double mu, double sigma, tldBoxMuller& d) {
 
   
   static const double epsilon = std::numeric_limits<double>::min();

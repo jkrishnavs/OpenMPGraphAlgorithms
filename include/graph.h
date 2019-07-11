@@ -73,7 +73,8 @@ struct graph
   bool reverseEdge;
   bool frozen;
   bool directed;
-  bool semiSorted;  
+  bool semiSorted;
+  bool weighted;
 };
 
 typedef struct graph graph;
@@ -116,6 +117,7 @@ graph* createGraph() {
   G->frozen = false;
   G->directed = false;
   G->semiSorted = false;
+  G->weighted = false;
   G->numNodes = 0;
   G->numEdges = 0;
   return G;

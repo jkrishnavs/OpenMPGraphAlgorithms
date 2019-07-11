@@ -7,7 +7,11 @@
 #include "graphEnum.h"
 #include "print.h"
 #include <string.h>
+#ifndef __cplusplus
 #include <stdio.h>
+#else
+#include <cstdio>
+#endif
 #include <ctype.h>
 
 
