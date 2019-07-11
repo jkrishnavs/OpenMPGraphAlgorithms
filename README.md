@@ -75,15 +75,20 @@ See GMLICENCE for GreenMarl Licence. See LICENCE.md for our licence.
    You can replace the function in energylib to track power
    and energy consumption of the kernel. please see [4] for more details.
 
+# 6.Additional Dependencies
+1.  SPRNG: Scalable parallel Random Number Generator:
+http://www.sprng.org
+Download and add to the home folder
 
 
 
-# 6.References
+
+# 7.References
 [1] https://github.com/stanford-ppl/Green-Marl  
 [2] https://snap.stanford.edu/data/  
 [3] SNAP: A General-Purpose Network Analysis and Graph-Mining Library  
 [4] https://github.com/jkrishnavs/Energymonitorlibrary
-# 7. Contact
+# 8. Contact
 1. Jyothi Krishna V S, IIT Madras (jkrishna@cse.iitm.ac.in)
 2. Rupesh Nasre, IIT Madras 
 

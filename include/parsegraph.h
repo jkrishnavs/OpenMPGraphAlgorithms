@@ -1,4 +1,6 @@
+#ifndef __cplusplus
 #define _GNU_SOURCE
+#endif
 #ifndef PARSE_GRAPH_H
 #define PARSE_GRAPH_H
 #include "graph.h"

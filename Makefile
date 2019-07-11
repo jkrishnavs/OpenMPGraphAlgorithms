@@ -2,6 +2,7 @@
 # please run ./configure before make
 include Makefile.in
 CC =$(CCINST) -fopenmp
+CPP =$(CPPINST) -fopenmp
 LDFLAGS = -O3 
 EM= -lenergymodule
 OBJFLAGS = -c -Wall
@@ -67,7 +68,7 @@ preprocess:
 	$(CC) -D $(CAPABILITY) $(INCWITOUTBIGLITTLE)  $(LDFLAGS) -D PAR_CHUNKSIZE=1024  -o $(BIN)/preprocess $(SRC)/preprocess.c
 
 preprocess:
-	$(CC) -D $(CAPABILITY) $(INCWITOUTBIGLITTLE)  $(LDFLAGS) -D PAR_CHUNKSIZE=1024  -o $(BIN)/graphgenerator $(SRC)/graphgenerator.c
+	$(CPP) -D $(CAPABILITY) $(INCWITOUTBIGLITTLE)  $(LDFLAGS) -D PAR_CHUNKSIZE=1024  -o $(BIN)/graphgenerator $(SRC)/graphgenerator.cpp
 
 
 dynamicwithchunkSize:
