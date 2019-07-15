@@ -2,6 +2,8 @@
 #include<cstdlib>
 #include<cmath>
 #include <limits>
+
+namespace normaldistribution {
 typedef struct threadLocalDataBoxMuller {
   double z1;
   bool generate;
@@ -39,4 +41,6 @@ double generateGaussiandistribution(double mu, double sigma, tldBoxMuller& d) {
   z0 = sqrt(-2.0 * log(u1)) * cos(two_pi * u2);
   d.z1 = sqrt(-2.0 * log(u1)) * sin(two_pi * u2);
   return z0 * sigma + mu;
+}
+
 }

@@ -2,7 +2,7 @@
  * Original base algorithm from GTGraph. 
  ****/
 #include <unistd.h>
-#include <sprng.h>
+#include <sprng_cpp.h>
 #include <string>
 
 #include "graph.h"
@@ -21,8 +21,8 @@
 graph* allocateMemoryforGraph(node_t n, edge_t m, bool weighted);
 void doubleMergeSort(node_t* l1, node_t* l2, edge_t left, edge_t right);
 void merge(node_t* l1, node_t* l2, edge_t left, edge_t mid, edge_t right);
-void choosePartition(node_t* u, node_t* v, node_t step, int* stream1);
-void varyParams(double* a, double* b, double* c, double* d, int * stream3, int* stream4);
+void choosePartition(node_t* u, node_t* v, node_t step, Sprng* stream1);
+void varyParams(double* a, double* b, double* c, double* d, Sprng * stream3, Sprng* stream4);
 
 
 
@@ -136,9 +136,11 @@ public:
   double get_edgeProbability() {return edgeProbability;}
   double get_degree(){return degree;}
   double get_degreesd(){return degreesd;}
+  double get_clusteringCoeff() {return clusteringCoeff;}
   bool get_selfloop(){return selfloop;}
   bool get_weighted(){return weighted;}
   double get_aed() {return aed;}
+  double get_density() {return density;}
   RMATdata& get_RMATdata() {return rmat; }
   void set_numNodes(node_t n) {numNodes = n;}
 };
@@ -187,7 +189,7 @@ GraphProperty::GraphProperty() {
 bool GraphProperty::updateConfigs(const std::string configfile) {
   FILE *f;
 
-  f = fopen(configfile.str(), "r");
+  f = fopen(configfile.c_str(), "r");
   if(f == NULL) {
     printError(CONFIG_FILE_NOT_FOUND, 0, NULL);
     return false;
@@ -198,7 +200,7 @@ bool GraphProperty::updateConfigs(const std::string configfile) {
   // of graph generation.
   
   
-  char* fileType[100];
+  char fileType[100];
   
   fscanf(f,"%s", fileType);
 
@@ -211,7 +213,7 @@ bool GraphProperty::updateConfigs(const std::string configfile) {
     while (!feof (f)) {
       char propType[50];
       double val;
-      fscanf(f, "%s %f", propType, val);
+      fscanf(f, "%s %lf", propType, val);
       if(strcmp(propType,"degree") == 0) {
 	degree = val;
       } else if(strcmp(propType,"density") == 0) {
@@ -243,9 +245,9 @@ graph* SBMGraphGenerator(double* probablilityVector, double *edgeProbablilityMat
 graph* symmetricStocasticBlockModel(node_t k, double A, double B, GraphProperty& p);
 
 graph* diagonalGraphGenerator(bool randomizedmidpoint, GraphProperty& p);
-graph* adjustAED(graph *G, gdata& data, int* stream, int itrs, int flag);
-graph* changeClustering(graph* G, gdata& data, int* stream, int itrs, int flag);
-graph* changeDegreesd(graph* G, gdata& data, int* stream, int itrs, int flag);
+graph* adjustAED(graph *G, gdata& data, Sprng* stream, int itrs, int flag);
+graph* changeClustering(graph* G, gdata& data, Sprng* stream, int itrs, int flag);
+graph* changeDegreesd(graph* G, gdata& data, Sprng* stream, int itrs, int flag);
 
 
 
@@ -281,21 +283,21 @@ int runalgo(int argc, char** argv) {
 
 graph* GraphProperty::callappropriategenerator() {
   if(model == Random) {
-    return randomGenerator(this);
+    return randomGenerator(*this);
   } else if (model  ==   ErdosRenyi) {
-    return erdosRenyiGenerator(this);
+    return erdosRenyiGenerator(*this);
   } else if (model == RMAT) {
-    return rmatGenerator(this);
+    return rmatGenerator(*this);
   } else if (model == SSCA) {
-    return SSCAGenerator(this);
+    return SSCAGenerator(*this);
   } else if (model == SBM || model ==LSSBM ||
 	     model == SSBM || model == PCGG) {
-    return StocasticBlockModel(this);
+    return StocasticBlockModel(*this);
   }
 }
 
-inline int generateweight(GraphProperty& p, int* stream2) {
-  return (int)( p.get_minWeight() + ((double )(p.get_maxWeight() - p.get_minWeight())) * sprng(stream2));
+inline int generateweight(GraphProperty& p, Sprng* stream2) {
+  return (int)( p.get_minWeight() + ((double )(p.get_maxWeight() - p.get_minWeight())) * stream2->sprng());
 }
 
 
@@ -306,21 +308,23 @@ graph* SSCAGenerator(GraphProperty& p) {
 }
 
 
+#define cmrg 3
 graph* randomGenerator(GraphProperty& p) {
-  int *stream1, *stream2;
   FILE* outfp;
   
-  stream1 = init_sprng(SPRNG_CMRG, 0, 1, SPRNG_SEED1, SPRNG_DEFAULT);
-  stream2 = init_sprng(SPRNG_CMRG, 0, 1, SPRNG_SEED2, SPRNG_DEFAULT);
+  Sprng* stream1 =  SelectType(cmrg);
+  stream1->init_sprng(0, 1, SPRNG_SEED1, SPRNG_DEFAULT);
+  Sprng* stream2 = SelectType(cmrg);
+  stream2->init_sprng(0, 1, SPRNG_SEED2, SPRNG_DEFAULT);
 
-  graph* G = allocatememoryforGraph(p.get_numNodes(), p.get_numEdges(), p.get_weighted());
-  G->r_node_idx = (node_t) malloc (p.get_numEdges() * sizeof(node_t));
+  graph* G = allocateMemoryforGraph(p.get_numNodes(), p.get_numEdges(), p.get_weighted());
+  G->r_node_idx = (node_t*) malloc (p.get_numEdges() * sizeof(node_t));
 
  
   
   for(edge_t i = 0; i< p.get_numEdges(); i++) {
-    node_t u = (node_t) isprng(stream1) % p.get_numNodes();
-    node_t v = (node_t) isprng(stream1) % p.get_numNodes();
+    node_t u = (node_t) stream1->isprng() % p.get_numNodes();
+    node_t v = (node_t) stream1->isprng() % p.get_numNodes();
     if((u == v) && (p.get_selfloop() == false)) {
       i--;
       continue;
@@ -338,6 +342,9 @@ graph* randomGenerator(GraphProperty& p) {
     G->begin[n+1] += G->begin[n];
   }
   doubleMergeSort(G->r_node_idx, G->node_idx, 0, p.get_numEdges());
+  free(G->r_node_idx);
+  delete stream1;
+  delete stream2;  
   return G;
 }
 
@@ -381,9 +388,9 @@ void updateGdata(graph* G, gdata& data) {
   double xval;
     
 #pragma omp parallel for reduction(+: degreesd) private(xval)
-  for (v = 0; v < G->numNodes; v ++) {
-    xval = (G->begin[v+1] - G->begin[v])
-      degreesd +=  (xval -data.degree) * (xval -data.degree) ;
+  for (node_t v = 0; v < G->numNodes; v ++) {
+    xval = (G->begin[v+1] - G->begin[v]);
+    degreesd +=  (xval - data.degree) * (xval -data.degree) ;
   }
   data.degreesd = sqrt(degreesd/ G->numNodes);
   data.aed = avgEdgeDistance(G);
@@ -542,9 +549,10 @@ graph* allocateMemoryforGraph(node_t n, edge_t m, bool weighted) {
 
 
 graph* erdosRenyiGenerator(GraphProperty& p) {
-  int *stream1, *stream2;
-  stream1 = init_sprng(SPRNG_CMRG, 0, 1, SPRNG_SEED1, SPRNG_DEFAULT);
-  stream2 = init_sprng(SPRNG_CMRG, 0, 1, SPRNG_SEED2, SPRNG_DEFAULT);
+  Sprng *stream1 = SelectType(cmrg);
+  Sprng *stream2 = SelectType(cmrg);
+  stream1->init_sprng(0, 1, SPRNG_SEED1, SPRNG_DEFAULT);
+  stream2->init_sprng(0, 1, SPRNG_SEED2, SPRNG_DEFAULT);
 
   /**
    * NOTICE: The base algorithm follows GT Graph generators. For original
@@ -553,21 +561,21 @@ graph* erdosRenyiGenerator(GraphProperty& p) {
   edge_t maxEdges = 0;
   if(p.get_selfloop() == false) {
     /* Should cover all edges 90 percent of time*/
-    maxEdges = (edge_t) ( 1.1 * ((p.get_edgeProbablity()) * p.get_numNodes()) * (p.get_numNodes() -1));
+    maxEdges = (edge_t) ( 1.1 * ((p.get_edgeProbability()) * p.get_numNodes()) * (p.get_numNodes() -1));
   } else {
-    maxEdges = (edge_t) ( 1.1 * ((p.get_edgeProbablity()) * p.get_numNodes()) * (p.get_numNodes()));
+    maxEdges = (edge_t) ( 1.1 * ((p.get_edgeProbability()) * p.get_numNodes()) * (p.get_numNodes()));
   }
-  graph *G = allocatememoryforGraph(n, maxEdges, p.get_weighted());
+  graph *G = allocateMemoryforGraph(p.get_numNodes(), maxEdges, p.get_weighted());
    
   /* Write the no. of edges later */
-
+  node_t numNodes = p.get_numNodes();
   edge_t edg = 0;
-  for (node_t i=0; i<p.get_numNodes(); i++) {
+  for (node_t i=0; i<numNodes; i++) {
     G->begin[i] = edg;
-    for (node_t j=0; j<p.get_numNodes(); j++) {
+    for (node_t j=0; j<numNodes; j++) {
       if ((i==j) && (p.get_selfloop() == false))		
 	continue;
-      if (p.get_edgeProbablity > sprng(stream1)) {
+      if (p.get_edgeProbability > stream1->sprng()) {
 	if(p.get_weighted()) {
 	  int w = generateweight(p,stream2);
 	  G->weights[edg] = w;
@@ -579,11 +587,13 @@ graph* erdosRenyiGenerator(GraphProperty& p) {
   }
   G->begin[numNodes] = edg;
   assert(edg <= maxEdges);
+  delete stream1;
+  delete stream2;
   return G;
 }
 
-void choosePartition(RMATdata& r, node_t* u, node_t* v, node_t step, int* stream1) {
-  double probability = sprng(stream1);
+void choosePartition(RMATdata& r, node_t* u, node_t* v, node_t step, Sprng* stream1) {
+  double probability = stream1->sprng();
   if (probability <=r.a) {
     
     /* Do nothing */
@@ -603,30 +613,30 @@ void choosePartition(RMATdata& r, node_t* u, node_t* v, node_t step, int* stream
   }
 
 }
-void varyParams(double* a, double* b, double* c, double* d, int* stream3,
-		int* stream4) {
+void varyParams(double* a, double* b, double* c, double* d,
+		Sprng* stream3, Sprng* stream4) {
   double v, S;
   /* Allow a max. of 5% variation */
   v = 0.05;
-  if (sprng(stream4) > 0.5)
-    *a += *a * v * sprng(stream3);
+  if (stream4->sprng() > 0.5)
+    *a += *a * v * stream3->sprng();
   else 
-    *a -= *a * v * sprng(stream3);
+    *a -= *a * v * stream3->sprng();
   
-  if (sprng(stream4) > 0.5)
-    *b += *b * v * sprng(stream3);
+  if (stream4->sprng() > 0.5)
+    *b += *b * v * stream3->sprng();
   else 
-    *b += *b * v * sprng(stream3);
+    *b += *b * v * stream3->sprng();
   
-  if (sprng(stream4) > 0.5)
-    *c += *c * v * sprng(stream3);
+  if (stream4->sprng() > 0.5)
+    *c += *c * v * stream3->sprng();
   else 
-    *c -= *c * v * sprng(stream3);
+    *c -= *c * v * stream3->sprng();
   
-  if (sprng(stream4) > 0.5)
-    *d += *d * v * sprng(stream3);
+  if (stream4->sprng() > 0.5)
+    *d += *d * v * stream3->sprng();
   else 
-    *d -= *d * v * sprng(stream3);
+    *d -= *d * v * stream3->sprng();
   // Normalize
   S = *a + *b + *c + *d;
   *a = *a/S;
@@ -644,18 +654,26 @@ graph* rmatGenerator(GraphProperty& p) {
    * NOTICE: The base algorithm follows GT Graph generators. For original
    * GTGraph code and  licence etc see GTgraph folder
    **/
-  int *stream1, *stream2, *stream3, *stream4;
-  stream1 = init_sprng(SPRNG_CMRG, 0, 1, SPRNG_SEED1, SPRNG_DEFAULT);
-  stream2 = init_sprng(SPRNG_CMRG, 0, 1, SPRNG_SEED2, SPRNG_DEFAULT);
-  stream3 = init_sprng(SPRNG_CMRG, 0, 1, SPRNG_SEED3, SPRNG_DEFAULT);
-  stream4 = init_sprng(SPRNG_CMRG, 0, 1, SPRNG_SEED4, SPRNG_DEFAULT);
+  Sprng *stream1 = SelectType(cmrg);
+  Sprng *stream2 = SelectType(cmrg);
+  Sprng *stream3 = SelectType(cmrg);
+  Sprng *stream4 = SelectType(cmrg);
+  stream1->init_sprng(0, 1, SPRNG_SEED1, SPRNG_DEFAULT);
+  stream2->init_sprng(0, 1, SPRNG_SEED2, SPRNG_DEFAULT);
+  stream3->init_sprng(0, 1, SPRNG_SEED3, SPRNG_DEFAULT);
+  stream4->init_sprng(0, 1, SPRNG_SEED4, SPRNG_DEFAULT);
   double a0, b0, c0, d0;
   node_t u, v;
-  for(edge_t it = 0; it< numEdges; it++) {
-    a0 = p.a; b0 = p.b; c0 = p.c; d0= p.d;
+  RMATdata  rmat = p.get_RMATdata();
+  graph* G = allocateMemoryforGraph(p.get_numNodes(), p.get_numEdges(), p.get_weighted());
+  /* allocate memory to store the edge sources*/
+  G->r_node_idx = (node_t*) malloc (p.get_numEdges()* sizeof(node_t));
+  
+  for(edge_t it = 0; it< p.get_numEdges(); it++) {
+    a0 = rmat.a; b0 = rmat.b; c0 = rmat.c; d0= rmat.d;
     u = 0;
     v = 0;
-    step = p.get_numNodes()/2;
+    node_t step = p.get_numNodes()/2;
     while (step >= 1) {
       choosePartition(&u, &v, step, stream1);
       step = step / 2;
@@ -668,20 +686,23 @@ graph* rmatGenerator(GraphProperty& p) {
     }
 
     if(p.get_weighted()) {
-      w = generateweight(p, stream2);
-      G->weights[edg] = w;
+      int w = generateweight(p, stream2);
+      G->weights[it] = w;
     }
-    G->node_idx[i] = v;
-    G->r_node_idx[i] = u;
-    G->begin[i+1]++; // array start with 0
+    G->node_idx[it] = v;
+    G->r_node_idx[it] = u;
     
   }
   // sort and Normalize
   for(node_t n = 1;n< p.get_numNodes(); n++) {
     G->begin[n+1] += G->begin[n];
   }
-
   doubleMergeSort(G->r_node_idx, G->node_idx, 0, p.get_numEdges());
+  free(G->r_node_idx);
+  delete stream1;
+  delete stream2;
+  delete stream3;
+  delete stream4;
   return G;  
 
 }
@@ -740,17 +761,18 @@ node_t getCommunityId(double* vec, double randComm, node_t len) {
  * communities i and j.
  * k : number of communities
  **/
-graph* SBMGraphGenerator(double* probablilityVector, double *edgeProbablilityMatrix, node_t k, GraphProperty& p) {
+graph* SBMGraphGenerator(double* probabilityVector, double *edgeProbabilityMatrix, node_t k, GraphProperty& p) {
   node_t* comm  = (node_t*) malloc (p.get_numNodes() * sizeof(node_t));
 
-  int* stream1,* stream2;
+  Sprng* stream1 = SelectType(cmrg);
+  Sprng* stream2 = SelectType(cmrg);
   
-  stream1 = init_sprng(SPRNG_CMRG, 0, 1, SPRNG_SEED1, SPRNG_DEFAULT);
-  stream2 = init_sprng(SPRNG_CMRG, 0, 1, SPRNG_SEED2, SPRNG_DEFAULT);
+  stream1->init_sprng(0, 1, SPRNG_SEED1, SPRNG_DEFAULT);
+  stream2->init_sprng(0, 1, SPRNG_SEED2, SPRNG_DEFAULT);
 
   node_t i;
-  for(i=0; i< numNodes; i++) {
-    double randComm = sprng(stream1) * PVECTORSCALE;
+  for(i=0; i< p.get_numNodes(); i++) {
+    double randComm = stream1->sprng() * PVECTORSCALE;
     node_t commID = getCommunityId(probabilityVector, randComm, k);
     comm[i] = commID;
   }
@@ -760,7 +782,7 @@ graph* SBMGraphGenerator(double* probablilityVector, double *edgeProbablilityMat
    * The expected number of edges is assumed to be saved in numEdges.
    * before this point.
    ****/
-  maxEdges = (edge_t) (1.1 *p.get_numEdges());
+  edge_t maxEdges = (edge_t) (1.1 *p.get_numEdges());
   graph* G =  allocateMemoryforGraph(p.get_numNodes(), maxEdges, p.get_weighted());
   node_t edg = 0;
   for(i=0; i< p.get_numNodes(); i++) {
@@ -768,8 +790,8 @@ graph* SBMGraphGenerator(double* probablilityVector, double *edgeProbablilityMat
     for (j=0; j< p.get_numNodes(); j++) {
       if(p.get_selfloop() == false && i == j)
 	continue;
-      double pobability = edgeProbabilityMatrix[(comm[i])*k + comm[j]];
-      if (probability > sprng(stream2)) {
+      double probability = edgeProbabilityMatrix[(comm[i])*k + comm[j]];
+      if (probability > stream2->sprng()) {
 	if(p.get_weighted()) {
 	  int w = generateweight(p,stream2);
 	  G->weights[edg] = w;
@@ -783,6 +805,8 @@ graph* SBMGraphGenerator(double* probablilityVector, double *edgeProbablilityMat
   assert(maxEdges >= edg);
   free(probablilityVector);
   free(edgeProbablilityMatrix);
+  delete stream1;
+  delete stream2;
   return G;
 }
 
@@ -796,13 +820,13 @@ graph* StocasticBlockModel(GraphProperty& p) {
     // then the cluster size is closer to
     //
 
-    nodes_t clusterSize = (nodes_t) p.get_degree()+1;
-    nodes_t numNodes = (nodes_t) ( p.get_degree()/ p.density);
-    nodes_t k = (nodes_t) (numNodes / clusterSize);
+    node_t clusterSize = (node_t) p.get_degree()+1;
+    node_t numNodes = (node_t) ( p.get_degree()/ p.density);
+    node_t k = (node_t) (numNodes / clusterSize);
     p.set_numNodes(numNodes);
     double sizefrac = ((double) clusterSize / numNodes);
 
-    double edgprop = cbrt(p.clusteringCoeff * 0.9);
+    double edgprop = cbrt(p.get_clusteringCoeff() * 0.9);
     // currently decided 10% of clustering coefficnt value should
     // come from iter cluster edges.
     // TODO make it flexible
@@ -838,8 +862,8 @@ graph* symmetricStocasticBlockModel(node_t k, double A, double B, GraphProperty&
   /*** Calculate the expected number of edges ***/
   if(p.get_selfloop() == true) {
     edge_t intraClusterEdges = (edge_t) numClusters * (k*k) * A;
-    edge_t interClusterEdges = ((double) (p.get_numNodes() * p.get_numNodes()) - p.numClusters * (k*k)) * B;
-    numEdges = intraClusterEdges + interClusterEdges;  
+    edge_t interClusterEdges = ((double) (p.get_numNodes() * p.get_numNodes()) - p.get_numClusters * (k*k)) * B;
+    edge_t numEdges = intraClusterEdges + interClusterEdges;  
   } else {
     edge_t intraClusterEdges = (edge_t) numClusters * (k*(k-1)) * A;
     edge_t interClusterEdges = ((double) (p.get_numNodes() * (p.get_numNodes() - 1)) - p.numClusters * (k*(k -1))) * B;
@@ -871,9 +895,9 @@ graph* lowdegreeNetworkgraph(GraphProperty& p) {
   int flag = 0;
 
   double scale = 0;
-  node_t nNodes = (node_t) (p.get_degree()/ p.get_density());
-  edge_t edges = (edge_t) ((double)nNodes * p.get_degree());
-  double vVal = log(nNodes/2);
+  node_t numNodes = (node_t) (p.get_degree()/ p.get_density());
+  edge_t edges = (edge_t) ((double)numNodes * p.get_degree());
+  double vVal = log(numNodes/2);
   // (pi^2/6)
   if(p.get_degree() < 3.28) {
     flag = 2;
@@ -890,11 +914,12 @@ graph* lowdegreeNetworkgraph(GraphProperty& p) {
   assert(p.get_selfloop() == 0);
   maxEdges = (edge_t) ( 1.1 * (edges));
 
-  graph *G = allocatememoryforGraph(n, maxEdges, p.get_weighted());
+  graph *G = allocateMemoryforGraph(n, maxEdges, p.get_weighted());
 
-  int *stream1, *stream2;
-  stream1 = init_sprng(SPRNG_CMRG, 0, 1, SPRNG_SEED1, SPRNG_DEFAULT);
-  stream2 = init_sprng(SPRNG_CMRG, 0, 1, SPRNG_SEED2, SPRNG_DEFAULT);
+  Sprng *stream1 = SelectType(cmrg);
+  Sprng *stream2 = SelectType(cmrg);
+  stream1->init_sprng(0, 1, SPRNG_SEED1, SPRNG_DEFAULT);
+  stream2->init_sprng(0, 1, SPRNG_SEED2, SPRNG_DEFAULT);
 
   edge_t edg = 0;
   node_t aed;
@@ -914,7 +939,7 @@ graph* lowdegreeNetworkgraph(GraphProperty& p) {
 	prob = scale / (aed*aed);
       }
       
-      if (prob > sprng(stream1)) {
+      if (prob > stream1->sprng()) {
 	if(p.get_weighted()) {
 	  int w = generateweight(p,stream2);
 	  G->weights[edg] = w;
@@ -926,33 +951,35 @@ graph* lowdegreeNetworkgraph(GraphProperty& p) {
   }
   G->begin[numNodes] = edg;
   assert(edg <= maxEdges);
+  delete stream1;
+  delete stream2;
   return G;    
 }
 
 graph* diagonalGraphGenerator(bool randomizedmidpoint, GraphProperty& p) {
   edge_t numEdges = (edge_t) p.get_degree() * p.get_numNodes();
   node_t i;
+  node_t numNodes = p.get_numNodes();
   edge_t maxEdges = (edge_t) (1.1 *p.get_numEdges());
   graph* G= allocateMemoryforGraph(p.get_numNodes(), maxNodes, p.get_weighted());
-  t1dBoxMuller data;
+  normaldistribution::tldBoxMuller data;
   data.z1 = 0;
   data.generate = false;
-  int* stream1; int* stream2;
-  stream1 = init_sprng(SPRNG_CMRG, 0, 1, SPRNG_SEED1, SPRNG_DEFAULT);
-  stream2 = init_sprng(SPRNG_CMRG, 0, 1, SPRNG_SEED2, SPRNG_DEFAULT);
+  Sprng* stream1 = SelectType(cmrg);
+  Sprng* stream2 = SelectType(cmrg);
+  stream1->init_sprng(0, 1, SPRNG_SEED1, SPRNG_DEFAULT);
+  stream2->init_sprng(0, 1, SPRNG_SEED2, SPRNG_DEFAULT);
 
 
-  // Thread local data. 
-  tldBoxMuller data;
-
+  
   
   node_t edg = 0;
   for(i=0; i< p.get_numNodes(); i++) {
     G->begin[i] = edg;
-    node_t idegree = (node_t) generateGaussiandistribution(p.get_degree(), p.get_degreesd(), data);
+    node_t idegree = (node_t) normaldistribution::generateGaussiandistribution(p.get_degree(), p.get_degreesd(), data);
     node_t midPoint; node_t startPoint;
     if(randomizedmidpoint) {
-      midPoint = (node_t) isprng(stream1) % idegree;
+      midPoint = (node_t) stream1->isprng() % idegree;
     } else {
       midPoint = idegree/2;
     }
@@ -978,6 +1005,8 @@ graph* diagonalGraphGenerator(bool randomizedmidpoint, GraphProperty& p) {
       edg ++;
     }
   }
+  delete stream1;
+  delete stream2;
   return G;
 }
 
@@ -987,7 +1016,7 @@ graph* diagonalGraphGenerator(bool randomizedmidpoint, GraphProperty& p) {
  * if flag = 0 decrease
  * if flag = 1 increase
 */
-graph* adjustAED(graph *G, gdata& data, int* stream, int itrs, int flag) {
+graph* adjustAED(graph *G, gdata& data, Sprng* stream, int itrs, int flag) {
 //
 // We have a global minima flag.
 // if set we will accept random negative
@@ -997,13 +1026,13 @@ graph* adjustAED(graph *G, gdata& data, int* stream, int itrs, int flag) {
   data.changes = 0;
   data.negativeChanges = 0;
   int i;
-  stream = init_sprng(SPRNG_CMRG, 0, 1, SPRNG_SEED1, SPRNG_DEFAULT);
+  //stream->init_prng(0, 1, SPRNG_SEED1, SPRNG_DEFAULT);
   int j=0;
   node_t src[2*itrs];
   for(i=0; i< itrs; i++) {
-    src[i+j] = (node_t) isprng(stream) % G->numNodes;
+    src[i+j] = (node_t) stream->isprng() % G->numNodes;
     j++;
-    src[i+j] = (node_t) isprng(stream) % G->numNodes;
+    src[i+j] = (node_t) stream->isprng() % G->numNodes;
   }
   /***
    ** To parallelize these loops value dependencies shpuld be handled.
@@ -1047,7 +1076,7 @@ graph* adjustAED(graph *G, gdata& data, int* stream, int itrs, int flag) {
     } else if(globalMinimaFlag == true) {
       // swap randomly for negative change to avoid falling into
       // local minima
-      if( isprng(stream) % 100 < biasedCoinFlip) {
+      if( stream->isprng() % 100 < biasedCoinFlip) {
 	swap = true;
 	data.negativeChanges++;
       }
@@ -1105,13 +1134,14 @@ graph* adjustAED(graph *G, gdata& data, int* stream, int itrs, int flag) {
 	
 	assert(id == (G->begin[src1+1] + diff));
 	// Update begin values
-	for(node_t n = src+1; n <= src2; n++) {
+	for(node_t n = src1+1; n <= src2; n++) {
 	  G->begin[n] += diff;
 	}
     
 	
 	
-      } else if((G->begin[src1+1]-G->begin[src1]) > (G->begin[src2+1]-G->begin[src2])) {
+      } else if(( (G->begin[src1+1]) - (G->begin[src1]) ) >
+		( (G->begin[src2+1]) - (G->begin[src2]) )) {
 	// shift left
 	edge_t id =0;
 	// copy src 1 edges to buf
@@ -1182,7 +1212,7 @@ graph* adjustAED(graph *G, gdata& data, int* stream, int itrs, int flag) {
 	id = G->begin[src1];
 	for (edge_t y= G->begin[src2];y < G->begin[src2+1]; y ++) {
 	  G->begin[id] = G->node_idx[y];
-	  if(p.get_weighted())
+	  if(G->weights != NULL)
 	    G->weights[id] = G->weights[y];
 	  id++;
 	}
@@ -1228,7 +1258,7 @@ graph* adjustAED(graph *G, gdata& data, int* stream, int itrs, int flag) {
  * if flag = 0 decrease
  * if flag = 1 increase
 */
-graph* changeClustering(graph* G, gdata& data, int* stream, int itrs, int flag) {
+graph* changeClustering(graph* G, gdata& data, Sprng* stream, int itrs, int flag) {
   
   // TODO increase intercluster edges.
 }
@@ -1239,20 +1269,22 @@ graph* changeClustering(graph* G, gdata& data, int* stream, int itrs, int flag) 
  * if flag = 0 decrease
  * if flag = 1 increase
 */
-graph* changeDegreesd(graph* G, gdata& data, int* stream, int itrs, int flag) {
+graph* changeDegreesd(graph* G, gdata& data, Sprng* stream, int itrs, int flag) {
 
   /*
   data.changes = 0;
   data.negativeChanges = 0;
   int i;
-  stream = init_sprng(SPRNG_CMRG, 0, 1, SPRNG_SEED1, SPRNG_DEFAULT);
+  Sprng* stream->init_sprng(0, 1, SPRNG_SEED1, SPRNG_DEFAULT);
   j=0;
   node_t src[2*itrs];
   for(i=0; i< itrs; i++) {
-    src[i+j] = (node_t) isprng(stream) % G->numNodes;
+    src[i+j] = (node_t) stream->isprng() % G->numNodes;
     j++;
-    src[i+j] = (node_t) isprng(stream) % G->numNodes;
+    src[i+j] = (node_t) stream->isprng() % G->numNodes;
   }
+
+  delete
   */
 
   return G;
