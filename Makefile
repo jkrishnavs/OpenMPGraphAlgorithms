@@ -14,7 +14,8 @@ PRE = precompiled
 OBJ = obj
 BIN = bin
 DEBUG= debug
-CFLAGS += 
+CFLAGS +=
+SPRNG_BIN=(convert.tmp pi-simple.tmp seed.tmp seed-simple.tmp simple-simple.tmp spawn.tmp sprng.tmp sprng-simple.tmp)
 GCCVERSION = $(shell gcc --version | grep ^gcc | sed 's/^.* //g')
 ifdef SET_CHUNKSIZE
 	CHUNKSIZE=$(SET_CHUNKSIZE)
@@ -66,9 +67,7 @@ endif
 
 preprocess:
 	$(CC) -D $(CAPABILITY) $(INCWITOUTBIGLITTLE)  $(LDFLAGS) -D PAR_CHUNKSIZE=1024  -o $(BIN)/preprocess $(SRC)/preprocess.c
-
-preprocess:
-	$(CPP) -D $(CAPABILITY) $(INCWITOUTBIGLITTLE)  $(LDFLAGS) -D PAR_CHUNKSIZE=1024  -o $(BIN)/graphgenerator $(SRC)/graphgenerator.cpp
+	$(CPP) -D $(CAPABILITY) $(INCWITOUTBIGLITTLE)  $(LDFLAGS) -D PAR_CHUNKSIZE=1024  -o $(BIN)/graphgenerator $(SRC)/graphgenerator.cpp -lsprng  ${SPRNG_BIN[@]/#/'/usr/local/bin/'}
 
 
 dynamicwithchunkSize:

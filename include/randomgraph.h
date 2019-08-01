@@ -1,0 +1,10 @@
+#ifndef _RANDOM_GRAPH_H
+#define _RANDOM_GRAPH_H
+
+#define SPRNG_SEED1 1261983
+#define SPRNG_SEED2 3121988
+#define SPRNG_SEED3 72824922
+#define SPRNG_SEED4 81984016
+#define DEBUG 0
+
+#endif

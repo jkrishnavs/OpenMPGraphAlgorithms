@@ -11,18 +11,11 @@
 #include "powerperformacetracking.h"
 #include "graphprop.h"
 #include "normaldistribution.h"
+#include "randomgraph.h"
 
 
 // TODO generate these values using scripts
-#define SPRNG_SEED1 1261983
-#define SPRNG_SEED2 3121988
 
-/** C functions **/
-graph* allocateMemoryforGraph(node_t n, edge_t m, bool weighted);
-void doubleMergeSort(node_t* l1, node_t* l2, edge_t left, edge_t right);
-void merge(node_t* l1, node_t* l2, edge_t left, edge_t mid, edge_t right);
-void choosePartition(node_t* u, node_t* v, node_t step, Sprng* stream1);
-void varyParams(double* a, double* b, double* c, double* d, Sprng * stream3, Sprng* stream4);
 
 
 
@@ -146,6 +139,12 @@ public:
 };
 
 
+/** C functions **/
+graph* allocateMemoryforGraph(node_t n, edge_t m, bool weighted);
+void doubleMergeSort(node_t* l1, node_t* l2, edge_t left, edge_t right);
+void merge(node_t* l1, node_t* l2, edge_t left, edge_t mid, edge_t right);
+void choosePartition(RMATdata& r, node_t* u, node_t* v, node_t step, Sprng* stream1);
+void varyParams(double* a, double* b, double* c, double* d, Sprng * stream3, Sprng* stream4);
 
 
 /**** default configs ******/
@@ -213,7 +212,7 @@ bool GraphProperty::updateConfigs(const std::string configfile) {
     while (!feof (f)) {
       char propType[50];
       double val;
-      fscanf(f, "%s %lf", propType, val);
+      fscanf(f, "%s %lf", propType, &val);
       if(strcmp(propType,"degree") == 0) {
 	degree = val;
       } else if(strcmp(propType,"density") == 0) {
@@ -241,7 +240,7 @@ graph* SSCAGenerator(GraphProperty& p);
 graph* StocasticBlockModel(GraphProperty& p);
 graph* lowdegreeNetworkgraph(GraphProperty& p);
 graph* diagonalGraphGenerator(bool randomizedmidpoint, GraphProperty& p);
-graph* SBMGraphGenerator(double* probablilityVector, double *edgeProbablilityMatrix, node_t k, GraphProperty& p);
+graph* SBMGraphGenerator(double* probabilityVector, double *edgeProbabilityMatrix, node_t k, GraphProperty& p);
 graph* symmetricStocasticBlockModel(node_t k, double A, double B, GraphProperty& p);
 
 graph* diagonalGraphGenerator(bool randomizedmidpoint, GraphProperty& p);
@@ -250,6 +249,11 @@ graph* changeClustering(graph* G, gdata& data, Sprng* stream, int itrs, int flag
 graph* changeDegreesd(graph* G, gdata& data, Sprng* stream, int itrs, int flag);
 
 
+
+void kernel(graph *G) {
+
+
+}
 
 
 int runalgo(int argc, char** argv) {
@@ -575,7 +579,7 @@ graph* erdosRenyiGenerator(GraphProperty& p) {
     for (node_t j=0; j<numNodes; j++) {
       if ((i==j) && (p.get_selfloop() == false))		
 	continue;
-      if (p.get_edgeProbability > stream1->sprng()) {
+      if (p.get_edgeProbability() > stream1->sprng()) {
 	if(p.get_weighted()) {
 	  int w = generateweight(p,stream2);
 	  G->weights[edg] = w;
@@ -675,7 +679,7 @@ graph* rmatGenerator(GraphProperty& p) {
     v = 0;
     node_t step = p.get_numNodes()/2;
     while (step >= 1) {
-      choosePartition(&u, &v, step, stream1);
+      choosePartition(rmat, &u, &v, step, stream1);
       step = step / 2;
       varyParams(&a0, &b0, &c0, &d0, stream3, stream4);
     }
@@ -708,12 +712,12 @@ graph* rmatGenerator(GraphProperty& p) {
 }
 
 /* graph* propertyControlledGraphGenerator(GraphProperty& p) { */
-/*   p.get_numNodes = (node_t) ( p.density() / p.get_degree() ); */
+/*   p.get_numNodes = (node_t) ( p.get_density() / p.get_degree() ); */
 /*   if(densityflag == true && degreeflag == true) { */
-/*     p.get_numNodes = (node_t) ( p.density / p.get_degree() ); */
+/*     p.get_numNodes = (node_t) ( p.get_density{} / p.get_degree() ); */
 /*     p.get_numEdges() = (edge_t) ( p.get_degree() * p.get_numNodes ); */
 /*   } else if (densityflag == true) { */
-/*     p.get_numEdges() = (edge_t) ( p.density() * p.get_numNodes * p.get_numNodes); */
+/*     p.get_numEdges() = (edge_t) ( p.get_density() * p.get_numNodes * p.get_numNodes); */
 /*   } else if (degreeflag == true) { */
 /*     p.get_numEdges() = (edge_t) ( p.get_degree() * p.get_numNodes); */
 /*   } */
@@ -757,7 +761,7 @@ node_t getCommunityId(double* vec, double randComm, node_t len) {
 /***
  * probabilityVector: vector [length k+1, where k is the number of communities] is probability vector 
  * of a node to be part of community. k is the number fo communities  
- * edgeProbablilityMatrix: [size k*k] where each entry (i,j) gves the probability of edge between nodes of two
+ * edgeProbabilityMatrix: [size k*k] where each entry (i,j) gves the probability of edge between nodes of two
  * communities i and j.
  * k : number of communities
  **/
@@ -803,8 +807,8 @@ graph* SBMGraphGenerator(double* probabilityVector, double *edgeProbabilityMatri
   }
   G->begin[p.get_numNodes()] = edg;
   assert(maxEdges >= edg);
-  free(probablilityVector);
-  free(edgeProbablilityMatrix);
+  free(probabilityVector);
+  free(edgeProbabilityMatrix);
   delete stream1;
   delete stream2;
   return G;
@@ -821,7 +825,7 @@ graph* StocasticBlockModel(GraphProperty& p) {
     //
 
     node_t clusterSize = (node_t) p.get_degree()+1;
-    node_t numNodes = (node_t) ( p.get_degree()/ p.density);
+    node_t numNodes = (node_t) ( p.get_degree()/ p.get_density());
     node_t k = (node_t) (numNodes / clusterSize);
     p.set_numNodes(numNodes);
     double sizefrac = ((double) clusterSize / numNodes);
@@ -859,14 +863,15 @@ graph* symmetricStocasticBlockModel(node_t k, double A, double B, GraphProperty&
 
 
   double numClusters = (double) p.get_numNodes() / k;
+  edge_t intraClusterEdges, interClusterEdges, numEdges;
   /*** Calculate the expected number of edges ***/
   if(p.get_selfloop() == true) {
-    edge_t intraClusterEdges = (edge_t) numClusters * (k*k) * A;
-    edge_t interClusterEdges = ((double) (p.get_numNodes() * p.get_numNodes()) - p.get_numClusters * (k*k)) * B;
-    edge_t numEdges = intraClusterEdges + interClusterEdges;  
+    intraClusterEdges = (edge_t) numClusters * (k*k) * A;
+    interClusterEdges = ((double) (p.get_numNodes() * p.get_numNodes()) - numClusters * (k*k)) * B;
+    numEdges = intraClusterEdges + interClusterEdges;  
   } else {
-    edge_t intraClusterEdges = (edge_t) numClusters * (k*(k-1)) * A;
-    edge_t interClusterEdges = ((double) (p.get_numNodes() * (p.get_numNodes() - 1)) - p.numClusters * (k*(k -1))) * B;
+    intraClusterEdges = (edge_t) numClusters * (k*(k-1)) * A;
+    interClusterEdges = ((double) (p.get_numNodes() * (p.get_numNodes() - 1)) - numClusters * (k*(k -1))) * B;
     numEdges = intraClusterEdges + interClusterEdges;  
   }
   
@@ -886,7 +891,7 @@ graph* symmetricStocasticBlockModel(node_t k, double A, double B, GraphProperty&
     }
   }
   probvec[k] = PVECTORSCALE;
-  return SBMGraphGenerator(probvec, edgeProbMatrix, k);
+  return SBMGraphGenerator(probvec, edgeProbMatrix, k, p);
 }
 
 
@@ -906,7 +911,7 @@ graph* lowdegreeNetworkgraph(GraphProperty& p) {
     flag = 1;
     scale = p.get_degree()/vVal;
   }
-
+ 
   assert(flag !=0);
   
   edge_t maxEdges = 0;
@@ -914,7 +919,7 @@ graph* lowdegreeNetworkgraph(GraphProperty& p) {
   assert(p.get_selfloop() == 0);
   maxEdges = (edge_t) ( 1.1 * (edges));
 
-  graph *G = allocateMemoryforGraph(n, maxEdges, p.get_weighted());
+  graph *G = allocateMemoryforGraph(numNodes, maxEdges, p.get_weighted());
 
   Sprng *stream1 = SelectType(cmrg);
   Sprng *stream2 = SelectType(cmrg);
@@ -961,7 +966,7 @@ graph* diagonalGraphGenerator(bool randomizedmidpoint, GraphProperty& p) {
   node_t i;
   node_t numNodes = p.get_numNodes();
   edge_t maxEdges = (edge_t) (1.1 *p.get_numEdges());
-  graph* G= allocateMemoryforGraph(p.get_numNodes(), maxNodes, p.get_weighted());
+  graph* G= allocateMemoryforGraph(p.get_numNodes(), maxEdges, p.get_weighted());
   normaldistribution::tldBoxMuller data;
   data.z1 = 0;
   data.generate = false;
