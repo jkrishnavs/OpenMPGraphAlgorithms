@@ -3,250 +3,17 @@
  ****/
 #include <unistd.h>
 #include <sprng_cpp.h>
-#include <string>
 
-#include "graph.h"
 #include "mainFunctions.h"
 #include "print.h"
 #include "powerperformacetracking.h"
 #include "graphprop.h"
 #include "normaldistribution.h"
 #include "randomgraph.h"
-
-
-// TODO generate these values using scripts
-
+#include "graphgenerator.h"
 
 
 
-typedef enum GraphModel {
-  Random,
-  ErdosRenyi,
-  RMAT,
-  SBM, // Stochastic Block Model
-  SSBM, // Symmetric Stochastic Block Model
-  LSSBM, // Log Sum Stochastic Block Model
-  PCGG, // Property Controlled Graph Generation
-  SSCA // GT graph generator. http://www.cse.psu.edu/~kxm85/software/GTgraph/gen.pdf
-} GraphModel;
-
-
-
-// TO CHECK: double or float of individual degree, coeff and ed ?
-typedef struct MetaData {
-  int changes;
-  int negativeChanges;
-  node_t maxDegree;
-  double degree;
-  double aed;
-  double density;
-  double degreesd;
-  double clustercoeff; 
-  //  node_t* degree;
-  double* coeff;
-  //  node_t* ed;
-}gdata;
-
-
-typedef enum GraphPropertyFlag {
-  allproperty,
-  degreeanddensity,
-  clustercoeff,
-  degreeaed,
-  degreeanddegresd,
-}GraphPropertyFlag;
-
-struct RMATdata{
-  /***** RMAT **********/
-  double a,b,c,d;
-};
-
-class GraphProperty{
-private:
-  GraphModel model;
-  GraphPropertyFlag property;
-  bool weighted;
-  node_t numNodes;
-  edge_t numEdges;
-  /*** Random Parameters ***/
-  bool selfloop;
-  /***** Erdos Renyi *****/
-  double edgeProbability;
-  /******** SSCA ********/
-  node_t maxCliqueSize;
-  node_t totClusters;
-  /********** Graph prop value *******/
-  /**
-     NOTE: These parameters has higher preference over numEdges and numNodes.
-     if these values contradict with the numEdges and numNodes 
-     we update the numNodes and numEdges based on these values.
-  **/
-  double degree; // Average degree of each Node
-  double density;
-  double clusteringCoeff;
-  double aed;
-  /******
-   * standard deviation on degrees
-   */
-  double degreesd;
-  /**
-   ** If set to true the nodes will be 
-   **/
-  bool sortedSBMGraph;
-
-  /****
-   ** RMAT data
-   ***/
-  RMATdata rmat;
-  
-  bool degreeflag;
-  bool densityflag;
-  bool ccflag;
-  bool aedflag;
-  bool degreesdflag;
-  /*****************/
-  /** 
-      Acceptable error as a percentage.
-      the final graph properties will be
-      in the range (prop*(1-err), prop*(1+err)). 
-  **/
-  double err;
-  
-  // TODO device a time out mechanism
-  
-  /*** Weight parameters ****/
-  int maxWeight;
-  int minWeight;
-
-public:
-  GraphProperty();
-  bool updateConfigs(const std::string configfile);
-  graph* callappropriategenerator();
-  node_t get_numNodes(){return numNodes;}
-  edge_t get_numEdges(){return numEdges;}
-  int get_minWeight() {return minWeight;}
-  int get_maxWeight(){return maxWeight;}
-  double get_edgeProbability() {return edgeProbability;}
-  double get_degree(){return degree;}
-  double get_degreesd(){return degreesd;}
-  double get_clusteringCoeff() {return clusteringCoeff;}
-  bool get_selfloop(){return selfloop;}
-  bool get_weighted(){return weighted;}
-  double get_aed() {return aed;}
-  double get_density() {return density;}
-  RMATdata& get_RMATdata() {return rmat; }
-  void set_numNodes(node_t n) {numNodes = n;}
-};
-
-
-/** C functions **/
-graph* allocateMemoryforGraph(node_t n, edge_t m, bool weighted);
-void doubleMergeSort(node_t* l1, node_t* l2, edge_t left, edge_t right);
-void merge(node_t* l1, node_t* l2, edge_t left, edge_t mid, edge_t right);
-void choosePartition(RMATdata& r, node_t* u, node_t* v, node_t step, Sprng* stream1);
-void varyParams(double* a, double* b, double* c, double* d, Sprng * stream3, Sprng* stream4);
-
-
-/**** default configs ******/
-GraphProperty::GraphProperty() {
-  weighted = false; // wf
-  selfloop = false; // sl
-  sortedSBMGraph = true; 
-
-  degreeflag = false;
-  densityflag = false;
-  ccflag = false;
-  aedflag = false;
-  degreesdflag = false;
-
-
-  model = Random; // m
-  numNodes = 100000; //n
-  numEdges = 1000000; // e
-  edgeProbability = 0.0001; //ep
-  
-  rmat.a = 0.45; // a
-  rmat.b = 0.15; // b
-  rmat.c = 0.15; // c
-  rmat.d = 0.25; // d
-
-
-  /**** Ma Clique Size **********/
-  maxCliqueSize = 4;
-
-  /*** Properties of interest *******/
-  degree  = 10;// dg
-  density = 0.0001; // dn
-  clusteringCoeff = 0.1; // cc
-  aed = 0.33; // aed
-  degreesd = 0.2; //dsd
-  err = 1; /*1%*/ // err
-  maxWeight = 100; //mw
-  minWeight = 1; // iw
-}
-
-bool GraphProperty::updateConfigs(const std::string configfile) {
-  FILE *f;
-
-  f = fopen(configfile.c_str(), "r");
-  if(f == NULL) {
-    printError(CONFIG_FILE_NOT_FOUND, 0, NULL);
-    return false;
-  }
-  
-  
-  // we assume the first entry in the config file specifies the model
-  // of graph generation.
-  
-  
-  char fileType[100];
-  
-  fscanf(f,"%s", fileType);
-
-  /*
-    TODO allow multiple graph property input options
-    right now we allow only allproperty option.
-  */
-  if(strcmp(fileType,"allproperty") == 0) {
-    property = allproperty;
-    while (!feof (f)) {
-      char propType[50];
-      double val;
-      fscanf(f, "%s %lf", propType, &val);
-      if(strcmp(propType,"degree") == 0) {
-	degree = val;
-      } else if(strcmp(propType,"density") == 0) {
-	density = val;
-      } else if(strcmp(propType,"cc") == 0) {
-	clusteringCoeff = val;
-      } else if(strcmp(propType,"aed") == 0) {
-	aed = val;
-      } else if(strcmp(propType,"dsd") == 0) {
-	degreesd = val;
-      } 
-    }
-  } else {
-
-  }
-  
-}
-
-graph* randomGenerator(GraphProperty& p);
-graph* erdosRenyiGenerator(GraphProperty& p);
-graph* rmatGenerator(GraphProperty& p);
-graph* SSCAGenerator(GraphProperty& p);
-//graph* propertyControlledGraphGenerator(GraphProperty& p);
-
-graph* StocasticBlockModel(GraphProperty& p);
-graph* lowdegreeNetworkgraph(GraphProperty& p);
-graph* diagonalGraphGenerator(bool randomizedmidpoint, GraphProperty& p);
-graph* SBMGraphGenerator(double* probabilityVector, double *edgeProbabilityMatrix, node_t k, GraphProperty& p);
-graph* symmetricStocasticBlockModel(node_t k, double A, double B, GraphProperty& p);
-
-graph* diagonalGraphGenerator(bool randomizedmidpoint, GraphProperty& p);
-graph* adjustAED(graph *G, gdata& data, Sprng* stream, int itrs, int flag);
-graph* changeClustering(graph* G, gdata& data, Sprng* stream, int itrs, int flag);
-graph* changeDegreesd(graph* G, gdata& data, Sprng* stream, int itrs, int flag);
 
 
 
@@ -285,20 +52,6 @@ int runalgo(int argc, char** argv) {
   return 0;
 }
 
-graph* GraphProperty::callappropriategenerator() {
-  if(model == Random) {
-    return randomGenerator(*this);
-  } else if (model  ==   ErdosRenyi) {
-    return erdosRenyiGenerator(*this);
-  } else if (model == RMAT) {
-    return rmatGenerator(*this);
-  } else if (model == SSCA) {
-    return SSCAGenerator(*this);
-  } else if (model == SBM || model ==LSSBM ||
-	     model == SSBM || model == PCGG) {
-    return StocasticBlockModel(*this);
-  }
-}
 
 inline int generateweight(GraphProperty& p, Sprng* stream2) {
   return (int)( p.get_minWeight() + ((double )(p.get_maxWeight() - p.get_minWeight())) * stream2->sprng());
@@ -444,11 +197,6 @@ void updateGdata(graph* G, gdata& data) {
 }
 
 
-
-
-
-
-
 void merge(node_t* l1, node_t* l2, edge_t start, edge_t mid, edge_t end) {
   node_t t1 = start;  node_t t2 = mid;
   node_t tmp;  node_t temp; node_t w = mid-1;
@@ -509,10 +257,6 @@ void merge(node_t* l1, node_t* l2, edge_t start, edge_t mid, edge_t end) {
   assert(tpf == tpb);
   assert(t1 == (t2-1)); 
 }
- 
- 
-
-
 
 void doubleMergeSort(node_t* l1, node_t* l2, edge_t left, edge_t right) {
 
@@ -532,10 +276,7 @@ void doubleMergeSort(node_t* l1, node_t* l2, edge_t left, edge_t right) {
       }
     }
   }
-
 }
-
-
 
 graph* allocateMemoryforGraph(node_t n, edge_t m, bool weighted) {
   graph *G = (graph*) malloc (sizeof(graph));
@@ -547,7 +288,6 @@ graph* allocateMemoryforGraph(node_t n, edge_t m, bool weighted) {
   }
   /* Initialize */
   memset(G->begin, 0, (n+1) * sizeof(edge_t));
-  
   return G;
 }
 

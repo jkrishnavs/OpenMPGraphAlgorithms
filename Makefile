@@ -28,7 +28,8 @@ ONLINECORESFLAG=-D ONLINECORES=$(ONLINE_CORES)
 
 # (PARFOR_STATIC PARFOR_GUIDED PARFOR_DYNAMIC TASKLOOP)
 SRC=src
-
+UTIL=util
+UTILS=$(UTIL)/*.c
 SRCS=$(wildcard src/*.c)
 DEBUGS=$(wildcard src/*.c)
 
@@ -56,18 +57,18 @@ debug: $(DEBUGS)
 #######	$(CC) $(LDFLAGS) -o $(basename $(notdir $<)) $
 ifeq ($(TASKLOOP_DEFINED), yes)
 $(SRCS):
-	$(CC) -D $(CAPABILITY) $(ONLINECORESFLAG) $(INC) $(LDFLAGS) $(TASKFL) $@ $(EM) -o $(BIN)/$(basename $(notdir $@))_task
+	$(CC) -D $(CAPABILITY) $(ONLINECORESFLAG) $(INC) $(LDFLAGS) $(TASKFL) $(UTILS) $@ $(EM) -o $(BIN)/$(basename $(notdir $@))_task
 else
 $(SRCS): 
 endif
-	$(CC) -D $(CAPABILITY) $(ONLINECORESFLAG) $(INC)  $(LDFLAGS) $@  $(EM) -o $(BIN)/$(basename $(notdir $@))_static  
-	$(CC) -D $(CAPABILITY) $(ONLINECORESFLAG) $(INC) $(LDFLAGS) $(DYNAMICFL) $@ $(EM) -o $(BIN)/$(basename $(notdir $@))_dynamic 
-	$(CC) -D $(CAPABILITY) $(ONLINECORESFLAG) $(INC) $(LDFLAGS) $(GUIDEDFL) $@ $(EM) -o $(BIN)/$(basename $(notdir $@))_guided
+	$(CC) -D $(CAPABILITY) $(ONLINECORESFLAG) $(INC)  $(LDFLAGS)   $(UTILS) $@  $(EM) -o $(BIN)/$(basename $(notdir $@))_static  
+	$(CC) -D $(CAPABILITY) $(ONLINECORESFLAG) $(INC) $(LDFLAGS) $(DYNAMICFL)  $(UTILS) $@ $(EM) -o $(BIN)/$(basename $(notdir $@))_dynamic 
+	$(CC) -D $(CAPABILITY) $(ONLINECORESFLAG) $(INC) $(LDFLAGS) $(GUIDEDFL)  $(UTILS) $@ $(EM) -o $(BIN)/$(basename $(notdir $@))_guided
 
 
 preprocess:
-	$(CC) -D $(CAPABILITY) $(INCWITOUTBIGLITTLE)  $(LDFLAGS) -D PAR_CHUNKSIZE=1024  -o $(BIN)/preprocess $(SRC)/preprocess.c
-	$(CPP) -D $(CAPABILITY) $(INCWITOUTBIGLITTLE)  $(LDFLAGS) -D PAR_CHUNKSIZE=1024  -o $(BIN)/graphgenerator $(SRC)/graphgenerator.cpp -lsprng  ${SPRNG_BIN[@]/#/'/usr/local/bin/'}
+	$(CC) -D $(CAPABILITY) $(INCWITOUTBIGLITTLE)  $(LDFLAGS) -D PAR_CHUNKSIZE=1024  -o $(BIN)/preprocess  $(UTIL)/*.c $(SRC)/preprocess.c
+	$(CPP) -D $(CAPABILITY) $(INCWITOUTBIGLITTLE)  $(LDFLAGS) -D PAR_CHUNKSIZE=1024  -o $(BIN)/graphgenerator  $(UTIL)/*.c  $(SRC)/graphProperty.cpp  $(SRC)/graphgenerator.cpp -lsprng  ${SPRNG_BIN[@]/#/'/usr/local/bin/'}
 
 
 dynamicwithchunkSize:
@@ -77,15 +78,6 @@ dynamicwithchunkSizedebug:
 	$(CC) -g -D $(CAPABILITY) $(ONLINECORESFLAG) $(INC) $(LDFLAGS) $(DYNAMICFL) $(TARGET) $(EM) -o $(BIN)/$(basename $(notdir $(TARGET)))_dynamic_$(CHUNKSIZE) 
 
 
-# ifeq ($(TASKLOOP_DEFINED), yes )
-# $(DEBUGS):
-# 	$(CC) $(DEBUGFLAGS) $(INC) -D $(CAPABILITY) $(ONLINECORESFLAG) $(TASKFL)  $(LDFLAGS) $@ $(EM) -o $(DEBUG)/$(basename $(notdir $@))_task
-# else
-# $(DEBUGS):
-# endif
-# 	$(CC) $(DEBUGFLAGS) $(INC) -D $(CAPABILITY) $(ONLINECORESFLAG)  $(LDFLAGS) $@ $(EM) -o $(DEBUG)/$(basename $(notdir $@))_static
-# 	$(CC) $(DEBUGFLAGS) $(INC) -D $(CAPABILITY) $(ONLINECORESFLAG) $(DYNAMICFL) $(LDFLAGS) $@ $(EM) -o $(DEBUG)/$(basename $(notdir $<))_dynamic
-# 	$(CC) $(DEBUGFLAGS) $(INC) -D $(CAPABILITY) $(ONLINECORESFLAG) $(GUIDEDFL)  $(LDFLAGS) $@ $(EM) -o $(DEBUG)/$(basename $(notdir $<))_guided
 
 
 fromprecompiled: precompile
@@ -93,13 +85,13 @@ fromprecompiled: precompile
 
 ifeq ( $(TASKLOOP_DEFINED), yes )
 precompile: src/%.c
-	$(CC) $(PRECOMPILE) $(INC) -D $(CAPABILITY) $(ONLINECORESFLAG) $(TASKFL) -o  $(PRE)/$(basename $(notdir $<))_task.i  $<
+	$(CC) $(PRECOMPILE) $(INC) -D $(CAPABILITY) $(ONLINECORESFLAG) $(TASKFL) -o  $(PRE)/$(basename $(notdir $<))_task.i  $(UTILS) $<
 else
 precompile: src/%.c
 endif
-	$(CC) $(PRECOMPILE) $(INC) -D $(CAPABILITY) $(ONLINECORESFLAG) -o  $(PRE)/$(basename $(notdir $<))_static.i  $<
-	$(CC) $(PRECOMPILE) $(INC) -D $(CAPABILITY) $(ONLINECORESFLAG) $(DYNAMICFL) -o  $(PRE)/$(basename $(notdir $<))_dynamic.i  $<
-	$(CC) $(PRECOMPILE) $(INC) -D $(CAPABILITY) $(ONLINECORESFLAG) $(GUIDEDFL) -o  $(PRE)/$(basename $(notdir $<))_guided.i  $<
+	$(CC) $(PRECOMPILE) $(INC) -D $(CAPABILITY) $(ONLINECORESFLAG) -o  $(PRE)/$(basename $(notdir $<))_static.i  $(UTILS) $<
+	$(CC) $(PRECOMPILE) $(INC) -D $(CAPABILITY) $(ONLINECORESFLAG) $(DYNAMICFL) -o  $(PRE)/$(basename $(notdir $<))_dynamic.i $(UTILS) $<
+	$(CC) $(PRECOMPILE) $(INC) -D $(CAPABILITY) $(ONLINECORESFLAG) $(GUIDEDFL) -o  $(PRE)/$(basename $(notdir $<))_guided.i  $(UTILS) $<
 
 clean:
 	rm -f $(OBJ)/*
