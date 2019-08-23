@@ -2,29 +2,49 @@
  * Original base algorithm from GTGraph. 
  ****/
 #include <unistd.h>
+#include <string.h>
 #include <sprng_cpp.h>
 
 #include "mainFunctions.h"
 #include "print.h"
 #include "powerperformacetracking.h"
-#include "graphprop.h"
+#include "graphProperty.hh"
 #include "normaldistribution.h"
 #include "randomgraph.h"
 #include "graphgenerator.h"
+#include "graphprop.h"
 
 
+/**
+ * Dummy function since the generator is linked to main functions.
+ */
+void kernel(graph *G) { /* empty*/}
 
-
-
-
-void kernel(graph *G) {
-
-
+graph* callappropriategenerator(GraphProperty* p) {
+  if(p->get_model() == GraphModel::Random) {
+    return randomGenerator(*p);
+  } else if (p->get_model()  ==   GraphModel::ErdosRenyi) {
+    return erdosRenyiGenerator(*p);
+  } else if (p->get_model() == GraphModel::RMAT) {
+    return rmatGenerator(*p);
+  } else if (p->get_model() == GraphModel::SSCA) {
+    return SSCAGenerator(*p);
+  } else if (p->get_model() == GraphModel::SBM ||
+	     p->get_model() == GraphModel::LSSBM ||
+	     p->get_model() == GraphModel::SSBM ||
+	     p->get_model() == GraphModel::PCGG) {
+    return StocasticBlockModel(*p);
+  }
 }
 
 
-int runalgo(int argc, char** argv) {
 
+  
+
+/**
+ * The main function
+ */ 
+int runalgo(int argc, char** argv) {
   if(argc > 4) {
     const char* argList[3] = {" <configfile.conf>" , "<outputfile.edges>","<propfile.prop>"};
     printError(INCORRECT_ARG_LIST, 3, argList);
@@ -33,20 +53,20 @@ int runalgo(int argc, char** argv) {
   GraphProperty* p = new GraphProperty();
   std::string configfile = argv[1]; 
   p->updateConfigs(configfile);
-  graph * G = p->callappropriategenerator();
+  graph * G = callappropriategenerator(p);
   assert(G != NULL);
   writeBackGraph(G, argv[2]);
-
+  double avgincident = G->numEdges/ G->numNodes;
   /*** Graph prop collection ***/
-  avgClusterCoeff(G);
-  avgEdgeDistance(G);
-  diameter(G);
-  sparsity(G);
-  triangle_counting(G);
+  double clusterCoeff = avgClusterCoeff(G);
+  double aed = avgEdgeDistance(G);
+  node_t dim = diameter(G);
+  double sparsityMeasure  = sparsity(G);
+  double scaledT= triangle_counting(G);
   printf("Avg Adjecency =  %f \n", avgincident);
-  printf("\nAvg ClusterCoeff = %f \n",clusterCoeff);
+  printf("\nAvg ClusterCoeff = %f \n", clusterCoeff);
   printf("Avg Edge Distance = %f \n", aed);
-  printf("Sparsity = %.7f \n",sparsityMeasure);
+  printf("Sparsity = %.7f \n", sparsityMeasure);
   printf("The Scaled percentange Triangles = %f\n\n", scaledT);
 
   return 0;
@@ -76,9 +96,6 @@ graph* randomGenerator(GraphProperty& p) {
 
   graph* G = allocateMemoryforGraph(p.get_numNodes(), p.get_numEdges(), p.get_weighted());
   G->r_node_idx = (node_t*) malloc (p.get_numEdges() * sizeof(node_t));
-
- 
-  
   for(edge_t i = 0; i< p.get_numEdges(); i++) {
     node_t u = (node_t) stream1->isprng() % p.get_numNodes();
     node_t v = (node_t) stream1->isprng() % p.get_numNodes();

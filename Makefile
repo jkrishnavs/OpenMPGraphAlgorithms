@@ -29,6 +29,7 @@ ONLINECORESFLAG=-D ONLINECORES=$(ONLINE_CORES)
 # (PARFOR_STATIC PARFOR_GUIDED PARFOR_DYNAMIC TASKLOOP)
 SRC=src
 UTIL=util
+GG=graphGenerator
 UTILS=$(UTIL)/*.c
 SRCS=$(wildcard src/*.c)
 DEBUGS=$(wildcard src/*.c)
@@ -37,7 +38,7 @@ OBJS=$(SRCS:.c=.o)
 
 PROGS = $(patsubst %.c,%,$(SRCS))
 
-.phony: $(SRCS) 
+.phony: $(SRCS) graphgenerator
 
 all: $(SRCS) 
 debug: $(DEBUGS)
@@ -68,7 +69,9 @@ endif
 
 preprocess:
 	$(CC) -D $(CAPABILITY) $(INCWITOUTBIGLITTLE)  $(LDFLAGS) -D PAR_CHUNKSIZE=1024  -o $(BIN)/preprocess  $(UTIL)/*.c $(SRC)/preprocess.c
-	$(CPP) -D $(CAPABILITY) $(INCWITOUTBIGLITTLE)  $(LDFLAGS) -D PAR_CHUNKSIZE=1024  -o $(BIN)/graphgenerator  $(UTIL)/*.c  $(SRC)/graphProperty.cpp  $(SRC)/graphgenerator.cpp -lsprng  ${SPRNG_BIN[@]/#/'/usr/local/bin/'}
+
+graphgenerator: $(UTIL)/*.c  $(GG)/graphProperty.cpp  $(GG)/graphgenerator.cpp 
+	$(CPP) -D $(CAPABILITY) $(INCWITOUTBIGLITTLE)  $(LDFLAGS) -D PAR_CHUNKSIZE=1024  -o $(BIN)/graphgenerator  $(UTIL)/*.c  $(GG)/graphProperty.cpp  $(GG)/graphgenerator.cpp -lsprng  ${SPRNG_BIN[@]/#/'/usr/local/bin/'}
 
 
 dynamicwithchunkSize:
@@ -92,6 +95,7 @@ endif
 	$(CC) $(PRECOMPILE) $(INC) -D $(CAPABILITY) $(ONLINECORESFLAG) -o  $(PRE)/$(basename $(notdir $<))_static.i  $(UTILS) $<
 	$(CC) $(PRECOMPILE) $(INC) -D $(CAPABILITY) $(ONLINECORESFLAG) $(DYNAMICFL) -o  $(PRE)/$(basename $(notdir $<))_dynamic.i $(UTILS) $<
 	$(CC) $(PRECOMPILE) $(INC) -D $(CAPABILITY) $(ONLINECORESFLAG) $(GUIDEDFL) -o  $(PRE)/$(basename $(notdir $<))_guided.i  $(UTILS) $<
+
 
 clean:
 	rm -f $(OBJ)/*

@@ -12,7 +12,8 @@ typedef enum GraphModel {
   SSBM, // Symmetric Stochastic Block Model
   LSSBM, // Log Sum Stochastic Block Model
   PCGG, // Property Controlled Graph Generation
-  SSCA // GT graph generator. http://www.cse.psu.edu/~kxm85/software/GTgraph/gen.pdf
+  SSCA, // GT graph generator. http://www.cse.psu.edu/~kxm85/software/GTgraph/gen.pdf
+  Auto // Auto generate the model from other features.
 } GraphModel;
 
 
@@ -93,8 +94,8 @@ private:
 
 public:
   GraphProperty();
+  GraphModel get_model() {return model;}
   bool updateConfigs(const std::string configfile);
-  graph* callappropriategenerator();
   node_t get_numNodes(){return numNodes;}
   edge_t get_numEdges(){return numEdges;}
   int get_minWeight() {return minWeight;}

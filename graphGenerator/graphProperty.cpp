@@ -2,7 +2,8 @@
 #include<cstring>
 #include "graph.h"
 #include "print.h"
-#include "graphgenerator.h" // Contains graphproperty.hh
+#include "graphProperty.hh"
+//#include "graphgenerator.h" 
 
 
 /**** default configs ******/
@@ -92,17 +93,3 @@ bool GraphProperty::updateConfigs(const std::string configfile) {
 
 
 
-graph* GraphProperty::callappropriategenerator() {
-  if(model == Random) {
-    return randomGenerator(*this);
-  } else if (model  ==   ErdosRenyi) {
-    return erdosRenyiGenerator(*this);
-  } else if (model == RMAT) {
-    return rmatGenerator(*this);
-  } else if (model == SSCA) {
-    return SSCAGenerator(*this);
-  } else if (model == SBM || model ==LSSBM ||
-	     model == SSBM || model == PCGG) {
-    return StocasticBlockModel(*this);
-  }
-}

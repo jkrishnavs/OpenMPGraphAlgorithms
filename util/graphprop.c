@@ -1,9 +1,20 @@
+#include<stdio.h>
+#include<string.h>
+#include "graph.h"
+#include "graphprop.h"
+#include "graphutil.h"
 int64_t T = 0 ;
 double avgincident;
 double scaledT;
 double aed;
 double sccindex;
 double clusterCoeff;
+
+
+
+
+
+
 
 double avgEdgeDistance(graph *G) {
   long * edgeDistances =  (long*) malloc (sizeof(long) * G->numNodes);
@@ -54,7 +65,7 @@ double avgEdgeDistance(graph *G) {
 }
 
 
-void avgClusterCoeff(graph *G) {
+double avgClusterCoeff(graph *G) {
   double* localClustering = (double*) malloc (sizeof(double) * G->numNodes);
 
 #pragma omp parallel
@@ -106,27 +117,29 @@ void avgClusterCoeff(graph *G) {
 
   clusterCoeff = clusterCoeff/G->numNodes;
 
-  free(localClustering);  
+  free(localClustering);
+  return clusterCoeff;
 }
 
 
-void diameter(graph *G) {
+node_t diameter(graph *G) {
+  return 0;
   //TODO if required
 }
 
-double sparsityMeasure;
 
-void sparsity(graph *G) {
-  sparsityMeasure =  (((double)G->numEdges) / G->numNodes);
+double sparsity(graph *G) {
+  double sparsityMeasure =  (((double)G->numEdges) / G->numNodes);
   /* printf("The sparsity is %f \n", sparsityMeasure); */
   sparsityMeasure = sparsityMeasure / (G->numNodes-1);
   /* printf("The sparsity is %.8f \n", sparsityMeasure); */
   if(sparsityMeasure == 0)
     printf("Hello");
+  return sparsityMeasure;
 }
 
 
-void sccIndex(graph *G) {
+double sccIndex(graph *G) {
 
   double* scclist = (double*) malloc (sizeof(double) * G->numNodes);
   int* visited  = (int*) malloc (sizeof(int) * G->numNodes);
@@ -138,10 +151,11 @@ void sccIndex(graph *G) {
   free(stack);
   free(scclist);
   free(visited);
+  return 0;
 }
 
 
-void triangle_counting(graph *G) {
+double  triangle_counting(graph *G) {
   // inittracking();
 #pragma omp parallel
   {
@@ -178,4 +192,6 @@ void triangle_counting(graph *G) {
       T += T_private;
   }
   // pausetracking();
+  scaledT = ( (double)2 * T) / ((double)G->numNodes * (G->numNodes-1) * (G->numNodes-2));
+  return scaledT ; 
 }

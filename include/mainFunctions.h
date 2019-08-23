@@ -9,34 +9,6 @@
 int runalgo(int argc,char** argv);
 void kernel(graph *G);
 
-graph* readGraph(const char* filename, const char* graphformat) {
-  struct timeval start, end;
-  gettimeofday(&start, NULL);
-  graph* G = parseedgeListGraph(filename, graphformat); 
-  gettimeofday(&end, NULL);
-  printTiming(GRAPHREAD,((end.tv_sec - start.tv_sec)*1000 + ((double)(end.tv_usec - start.tv_usec))/1000));
-  return G;
-}
-
-
-void createReverseEdge(graph* G) {
-  struct timeval start, end;
-  gettimeofday(&start, NULL);
-  createReverseEdges(G);
-  gettimeofday(&end, NULL);
-  printTiming(REVERSE_EDGE_CREATION,((end.tv_sec - start.tv_sec)*1000 + ((double)(end.tv_usec - start.tv_usec))/1000));
-}
-
-
-void writeGraph(graph* G, const char* filename) {
-  struct timeval start, end;
-  gettimeofday(&start, NULL);
-  writeBackGraph(G, filename);
-  gettimeofday(&end, NULL);
-  printTiming(GRAPHWRITE,((end.tv_sec - start.tv_sec)*1000 + ((double)(end.tv_usec - start.tv_usec))/1000));
-
-}
-
 
 /***
   * The main Function.
