@@ -45,14 +45,18 @@ graph* callappropriategenerator(GraphProperty* p) {
  * The main function
  */ 
 int runalgo(int argc, char** argv) {
-  if(argc > 4) {
+  if(argc != 4) {
     const char* argList[3] = {" <configfile.conf>" , "<outputfile.edges>","<propfile.prop>"};
     printError(INCORRECT_ARG_LIST, 3, argList);
     return -1;
   }
   GraphProperty* p = new GraphProperty();
   std::string configfile = argv[1]; 
-  p->updateConfigs(configfile);
+  bool scanFlag = p->updateConfigs(configfile);
+  if(scanFlag == false) {
+    printError(INCORRECT_CONFIG_FILE, 3, NULL);
+    return -1;
+  }
   graph * G = callappropriategenerator(p);
   assert(G != NULL);
   writeBackGraph(G, argv[2]);

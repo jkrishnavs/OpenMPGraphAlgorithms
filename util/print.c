@@ -60,6 +60,8 @@ void printError(errorCodes code, int NoOfMsgs,const char** msgs) {
     break;
   case TASKLOOP_NOTENABLED:
     printf("Error: Taskloop not available with the current system\n");
+  case INCORRECT_CONFIG_FILE:
+    printf("Error: incorrect Config file, see docs for correct files\n");
   default:
     fprintf(stderr,"Unknown error\n");
   }

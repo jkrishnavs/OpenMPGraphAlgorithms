@@ -59,35 +59,75 @@ bool GraphProperty::updateConfigs(const std::string configfile) {
   
   
   char fileType[100];
+  char modelType[100];
   
-  fscanf(f,"%s", fileType);
+  int t = fscanf(f,"%s", fileType);
+  
+  t = fscanf(f,"%s", modelType);
+
+  assert(t!=0);
+
+  if(!strcmp(modelType, "random")) {
+    model = Random;
+  } else if(!strcmp(modelType, "auto")) {
+    model = Auto;
+  } else{
+    return false;
+  }
 
   /*
     TODO allow multiple graph property input options
     right now we allow only allproperty option.
   */
-  if(strcmp(fileType,"allproperty") == 0) {
+  if(!strcmp(fileType,"allproperty")) {
     property = allproperty;
     while (!feof (f)) {
       char propType[50];
       double val;
-      fscanf(f, "%s %lf", propType, &val);
-      if(strcmp(propType,"degree") == 0) {
+      int t = fscanf(f, "%s %lf", propType, &val);
+      assert(t!=0);
+      if(!strcmp(propType,"degree")) {
 	degree = val;
-      } else if(strcmp(propType,"density") == 0) {
+      } else if(!strcmp(propType,"density")) {
 	density = val;
-      } else if(strcmp(propType,"cc") == 0) {
+      } else if(!strcmp(propType,"cc")) {
 	clusteringCoeff = val;
-      } else if(strcmp(propType,"aed") == 0) {
+      } else if(!strcmp(propType,"aed")) {
 	aed = val;
-      } else if(strcmp(propType,"dsd") == 0) {
+      } else if(!strcmp(propType,"dsd")) {
 	degreesd = val;
-      } 
+      } else {
+	fclose(f);
+	return false;
+      }
     }
-  } else {
+  } else if(!strcmp(fileType, "degreeanddensity")) {
+    // We use random generator
+    property=degreeanddensity;
+    while (!feof (f)) {
+      char propType[50];
+      double val;
+      int t = fscanf(f, "%s %lf", propType, &val);
+      assert(t!=0);
+      if(!strcmp(propType,"degree")) {
+	degree = val;
+      } else if(!strcmp(propType,"density")) {
+	density = val;
+      } else {
+	fclose(f);
+	return false;
+      }
 
+    }
+  } else{
+    printf("Hello22");
+
+    fclose(f);
+    return false;
   }
-  
+
+  fclose(f);
+  return true;
 }
 
 
