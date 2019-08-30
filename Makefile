@@ -73,6 +73,10 @@ preprocess:
 graphgenerator: $(UTIL)/*.c  $(GG)/graphProperty.cpp  $(GG)/graphgenerator.cpp 
 	$(CPP) -D $(CAPABILITY) $(INCWITOUTBIGLITTLE)  $(LDFLAGS) -D PAR_CHUNKSIZE=1024  -o $(BIN)/graphgenerator  $(UTIL)/*.c  $(GG)/graphProperty.cpp  $(GG)/graphgenerator.cpp -lsprng  ${SPRNG_BIN[@]/#/'/usr/local/bin/'}
 
+debuggraphgenerator: $(UTIL)/*.c  $(GG)/graphProperty.cpp  $(GG)/graphgenerator.cpp 
+	$(CPP) -g -D $(CAPABILITY) $(INCWITOUTBIGLITTLE)  $(LDFLAGS) -D PAR_CHUNKSIZE=1024  -o $(BIN)/graphgenerator  $(UTIL)/*.c  $(GG)/graphProperty.cpp  $(GG)/graphgenerator.cpp -lsprng  ${SPRNG_BIN[@]/#/'/usr/local/bin/'}
+
+
 
 dynamicwithchunkSize:
 	$(CC) -D $(CAPABILITY) $(ONLINECORESFLAG) $(INC) $(LDFLAGS) $(DYNAMICFL) $(TARGET) $(EM) -o $(BIN)/$(basename $(notdir $(TARGET)))_dynamic_$(CHUNKSIZE) 

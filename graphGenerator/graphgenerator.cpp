@@ -97,9 +97,11 @@ graph* randomGenerator(GraphProperty& p) {
   stream1->init_sprng(0, 1, SPRNG_SEED1, SPRNG_DEFAULT);
   Sprng* stream2 = SelectType(cmrg);
   stream2->init_sprng(0, 1, SPRNG_SEED2, SPRNG_DEFAULT);
-
   graph* G = allocateMemoryforGraph(p.get_numNodes(), p.get_numEdges(), p.get_weighted());
   G->r_node_idx = (node_t*) malloc (p.get_numEdges() * sizeof(node_t));
+  G->numNodes = p.get_numNodes();
+  G->numEdges = p.get_numEdges();
+  //  #pragma omp parallel for
   for(edge_t i = 0; i< p.get_numEdges(); i++) {
     node_t u = (node_t) stream1->isprng() % p.get_numNodes();
     node_t v = (node_t) stream1->isprng() % p.get_numNodes();
@@ -113,9 +115,9 @@ graph* randomGenerator(GraphProperty& p) {
     }
     G->node_idx[i] = v;
     G->r_node_idx[i] = u;
-    G->begin[i+1]++; // array start with 0
+    //#pragma omp atomic
+    G->begin[u]++; // array start with 0
   }
-  
   for(node_t n = 1;n< p.get_numNodes(); n++) {
     G->begin[n+1] += G->begin[n];
   }
@@ -128,7 +130,7 @@ graph* randomGenerator(GraphProperty& p) {
 
 #define compare_double_list(l1,l2,i1,i2) ((l1[i2]< l1[i1]) ? true: ( (l1[i2]== l1[i1]) ? l2[i2] < l2[i1]: false))
 
-#define compare_DD_list(l1,l2, r1, r2, i1, i2) ((r1[i2]< l1[i1]) ? true: ( (r1[i2]== l1[i1]) ? r2[i2] < l2[i1]: false))
+#define compare_DD_list(t1,t2, l1, l2, ti, i) ((l1[i]< t1[ti]) ? true: ( (l1[i]== t1[ti]) ? t2[ti] < l2[i]: false))
 
 inline void swap_double_list(node_t* l1, node_t* l2, edge_t i1, edge_t i2) {
   node_t tmp;
@@ -136,9 +138,9 @@ inline void swap_double_list(node_t* l1, node_t* l2, edge_t i1, edge_t i2) {
   tmp = l2[i1]; l2[i1] = l2[i2]; l2[i2] = tmp;
 }
 
-inline void copy_double_list(node_t* l1, node_t* l2, node_t* c1, node_t* c2, edge_t i1, edge_t i2) {
-  c1[i2] = l1[i1];
-  c2[i2] = l2[i1];
+inline void copy_double_list(node_t* s1, node_t* s2, node_t* d1, node_t* d2, edge_t si, edge_t di) {
+  d1[di] = s1[si];
+  d2[di] = s2[si];
 }
 
 
@@ -217,71 +219,78 @@ void updateGdata(graph* G, gdata& data) {
   
 }
 
+#define _SELECT_LOWER 0
+#define _SELECT_UPPER 1
+#define _SELECT_TEMP 2 
+
 
 void merge(node_t* l1, node_t* l2, edge_t start, edge_t mid, edge_t end) {
   node_t t1 = start;  node_t t2 = mid;
   node_t tmp;  node_t temp; node_t w = mid-1;
+  /*
+   * We are allocating some buffer to copy out the first half of the 
+   * array (start- mid).
+   * this buffer acts as a queue, FIFO.
+   * with its front pointed to by tpf and back pointed to by 
+   * tpb. i.e. the queue is empty when tpf == tpb. 
+   */
   node_t tempqueue[(mid - start)*2]; // should we use malloc ?
+  node_t tpf = 0; node_t tpb = 0; 
   node_t offset = mid-start;
   node_t *tq2 = &(tempqueue[offset]);
+
   
-  node_t tpf = 0; node_t tpb = 0; 
-  
-  while(t1 < mid && t2< end) {
-    if(tpf == tpb) {
-      // empty queue
+  int _flag;
+  while(t2< end) {
+    if(tpf == tpb && t1 < mid) {
       if(compare_double_list(l1, l2, t1, t2)) {
-	copy_double_list(l1, l2, tempqueue, tq2, t1, tpf);
-	tpf++;
-	copy_double_list(l1, l2, l1, l2, t2, t1);
-	t2++;
+	_flag = _SELECT_UPPER;
+      } else {
+	_flag = _SELECT_LOWER;
       }
     } else{
       if(compare_DD_list(tempqueue, tq2, l1, l2, tpb, t2)) {
-	copy_double_list(l1, l2, tempqueue, tq2, t1, tpf);
+	_flag = _SELECT_UPPER;
+      } else {
+	_flag = _SELECT_TEMP;
+      }
+    }
+    // If upper or temp copy the list to current positions
+    if(t1 < mid && (_flag == _SELECT_UPPER || _flag == _SELECT_TEMP)) {
+      // backup lower to temp
+      	copy_double_list(l1, l2, tempqueue, tq2, t1, tpf);
 	tpf++;
+    }
+    if(_flag == _SELECT_UPPER) {
 	copy_double_list(l1, l2, l1, l2, t2, t1);
 	t2++;
-      } else {	
-	copy_double_list(l1, l2, tempqueue, tq2, t1, tpf);
-	tpf++;
+    } else if (_flag == _SELECT_TEMP) {
 	copy_double_list(tempqueue, tq2, l1, l2,  tpb, t1);
 	tpb++;
-      }
+    }
+    if(t1> mid  && tpf == tpb) {
+      // the loop is already sorted.
+      t1 = t2; // for the assert.
+      break;
     }
     t1++;
   }
   if(t1 < mid) {
-    // on highly rare occations
-    // copy rest of the first half to the temp array
-    while(t1 < mid) {
-      copy_double_list(l1, l2, tempqueue, tq2, t1, tpf);
-      tpf++;	
-    }
-    // now copy back withou comparison t1 array already sorted.
-    while(tpf > tpb ) {
-      copy_double_list(tempqueue, tq2,  l1, l2,  tpf, t1);
-      t1++; tpb++;
-    }
-  } else {
-    while(tpf > tpb ) {
-      if(t2 < end && compare_DD_list(tempqueue, tq2, l1, l2, tpb, t2)) {
-	copy_double_list(l1, l2, l1, l2, t2, t1);
-	t2++;
-      } else {
-	copy_double_list(tempqueue, tq2, l1, l2,  tpb, t1);
-	tpb++;
-      }
-      t1++;
-    }
+    assert(0 ==1);
   }
+  // Just copy back the buffered lower half to the end of the merged list.
+  while(tpf > tpb ) {
+    copy_double_list(tempqueue, tq2, l1, l2,  tpb, t1);
+    tpb++;
+    t1++;
+  }
+ 
   assert(tpf == tpb);
-  assert(t1 == (t2-1)); 
+  assert(t1 == t2); 
 }
 
 void doubleMergeSort(node_t* l1, node_t* l2, edge_t left, edge_t right) {
-
-  if((right - left)< 100) {
+  if((right - left)> 10) {
     edge_t mid = left + (right-left)/2;
     doubleMergeSort(l1,l2, left, mid);
     doubleMergeSort(l1,l2, mid, right);

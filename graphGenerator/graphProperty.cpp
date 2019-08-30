@@ -117,7 +117,8 @@ bool GraphProperty::updateConfigs(const std::string configfile) {
 	fclose(f);
 	return false;
       }
-
+      numNodes =  (node_t)  degree/density;
+      numEdges = (edge_t) numNodes * degree;
     }
   } else{
     printf("Hello22");
