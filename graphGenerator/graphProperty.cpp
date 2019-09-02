@@ -79,56 +79,57 @@ bool GraphProperty::updateConfigs(const std::string configfile) {
     return false;
   }
 
+
   /*
     TODO allow multiple graph property input options
     right now we allow only allproperty option.
   */
-  if(!strcmp(fileType,"allproperty")) {
+  while (!feof (f)) {
+    char propType[50];
+    double val;
+    int t = fscanf(f, "%s %lf", propType, &val);
+    assert(t!=0);
+    if(!strcmp(propType,"degree")) {
+      degree = val;
+    } else if(!strcmp(propType,"density")) {
+      density = val;
+    } else if(!strcmp(propType,"cc")) {
+      clusteringCoeff = val;
+    } else if(!strcmp(propType,"aed")) {
+      aed = val;
+    } else if(!strcmp(propType,"dsd")) {
+      degreesd = val;
+    } else if(!strcmp(propType, "rmat.a")){
+      rmat.a = val;
+    } else if(!strcmp(propType, "rmat.b")){
+      rmat.b = val;
+    } else if(!strcmp(propType, "rmat.c")){
+      rmat.c = val;
+    } else if(!strcmp(propType, "rmat.d")){
+      rmat.d = val;
+    } else {
+      char *prop = propType;
+      const char *errorMsg[1] = { prop};
+      printError(UNKNOWN_PROPERTY_ERROR, 1, errorMsg);
+    }
+  }
+
+  if(!(strcmp(fileType, "All"))) {
     property = allproperty;
-    while (!feof (f)) {
-      char propType[50];
-      double val;
-      int t = fscanf(f, "%s %lf", propType, &val);
-      assert(t!=0);
-      if(!strcmp(propType,"degree")) {
-	degree = val;
-      } else if(!strcmp(propType,"density")) {
-	density = val;
-      } else if(!strcmp(propType,"cc")) {
-	clusteringCoeff = val;
-      } else if(!strcmp(propType,"aed")) {
-	aed = val;
-      } else if(!strcmp(propType,"dsd")) {
-	degreesd = val;
-      } else {
-	fclose(f);
-	return false;
-      }
-    }
   } else if(!strcmp(fileType, "degreeanddensity")) {
-    // We use random generator
     property=degreeanddensity;
-    while (!feof (f)) {
-      char propType[50];
-      double val;
-      int t = fscanf(f, "%s %lf", propType, &val);
-      assert(t!=0);
-      if(!strcmp(propType,"degree")) {
-	degree = val;
-      } else if(!strcmp(propType,"density")) {
-	density = val;
-      } else {
-	fclose(f);
-	return false;
-      }
-      numNodes =  (node_t)  degree/density;
-      numEdges = (edge_t) numNodes * degree;
-    }
+    numNodes =  (node_t)  degree/density;
+    numEdges = (edge_t) numNodes * degree;
+    
   } else{
     printf("Hello22");
-
     fclose(f);
     return false;
+  }
+
+  if(model == RMAT) {
+    double total = rmat.a + rmat.b + rmat.c + rmat.d;  
+    assert(total  == 1.0);
   }
 
   fclose(f);

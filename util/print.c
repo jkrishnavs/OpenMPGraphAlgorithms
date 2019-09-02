@@ -60,10 +60,16 @@ void printError(errorCodes code, int NoOfMsgs,const char** msgs) {
     break;
   case TASKLOOP_NOTENABLED:
     printf("Error: Taskloop not available with the current system\n");
+    break;
   case INCORRECT_CONFIG_FILE:
     printf("Error: incorrect Config file, see docs for correct files\n");
+    break;
+  case UNKNOWN_PROPERTY_ERROR:
+    printf("Error: Unknown property in the config file:\n");
+    printf("\t%s", msgs[0]);
+    printf("\n");
+    break;
   default:
     fprintf(stderr,"Unknown error\n");
   }
-
 }

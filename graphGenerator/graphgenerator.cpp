@@ -453,7 +453,10 @@ graph* rmatGenerator(GraphProperty& p) {
   graph* G = allocateMemoryforGraph(p.get_numNodes(), p.get_numEdges(), p.get_weighted());
   /* allocate memory to store the edge sources*/
   G->r_node_idx = (node_t*) malloc (p.get_numEdges()* sizeof(node_t));
-  
+
+
+  printf("a = %f b=%f, c= %f and d = %f\n", rmat.a, rmat.b, rmat.c, rmat.d);
+  printf("The number of edges is %d and nodes is %d \n", p.get_numNodes(), p.get_numEdges());
   for(edge_t it = 0; it< p.get_numEdges(); it++) {
     a0 = rmat.a; b0 = rmat.b; c0 = rmat.c; d0= rmat.d;
     u = 0;
@@ -476,12 +479,14 @@ graph* rmatGenerator(GraphProperty& p) {
     }
     G->node_idx[it] = v;
     G->r_node_idx[it] = u;
-    
+    G->begin[u]++;
   }
-  // sort and Normalize
+  // sort and normalize
   for(node_t n = 1;n< p.get_numNodes(); n++) {
     G->begin[n+1] += G->begin[n];
   }
+  G->numNodes  = p.get_numNodes();
+  G->numEdges = p.get_numEdges();
   doubleMergeSort(G->r_node_idx, G->node_idx, 0, p.get_numEdges());
   free(G->r_node_idx);
   delete stream1;
