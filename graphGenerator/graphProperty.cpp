@@ -22,7 +22,7 @@ GraphProperty::GraphProperty() {
   model = Random; // m
   numNodes = 100000; //n
   numEdges = 1000000; // e
-  edgeProbability = 0.0001; //ep
+  edgeProbability = 0.00; //ep
   
   rmat.a = 0.45; // a
   rmat.b = 0.15; // b
@@ -69,6 +69,10 @@ bool GraphProperty::updateConfigs(const std::string configfile) {
 
   if(!strcmp(modelType, "random")) {
     model = Random;
+  } else if(!strcmp(modelType, "ErdosRenyi")) {
+    model = ErdosRenyi;
+  } else if(!strcmp(modelType, "rmat")) {
+    model = RMAT;
   } else if(!strcmp(modelType, "auto")) {
     model = Auto;
   } else{

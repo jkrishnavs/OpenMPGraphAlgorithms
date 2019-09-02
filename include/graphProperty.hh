@@ -110,6 +110,8 @@ public:
   double get_density() {return density;}
   RMATdata& get_RMATdata() {return rmat; }
   void set_numNodes(node_t n) {numNodes = n;}
+  void set_numEdges(edge_t e) {numEdges = e;}
+  void set_edgeProbability(double p) { edgeProbability = p;}
 };
 
 

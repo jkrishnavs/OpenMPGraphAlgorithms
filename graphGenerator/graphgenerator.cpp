@@ -60,7 +60,7 @@ int runalgo(int argc, char** argv) {
   graph * G = callappropriategenerator(p);
   assert(G != NULL);
   writeBackGraph(G, argv[2]);
-  double avgincident = G->numEdges/ G->numNodes;
+  double avgincident =  (double)G->numEdges / G->numNodes;
   /*** Graph prop collection ***/
   double clusterCoeff = avgClusterCoeff(G);
   double aed = avgEdgeDistance(G);
@@ -327,22 +327,31 @@ graph* erdosRenyiGenerator(GraphProperty& p) {
   Sprng *stream2 = SelectType(cmrg);
   stream1->init_sprng(0, 1, SPRNG_SEED1, SPRNG_DEFAULT);
   stream2->init_sprng(0, 1, SPRNG_SEED2, SPRNG_DEFAULT);
+  if(p.get_edgeProbability() != 0) {
+    if(p.get_selfloop() == false){
+      p.set_numEdges( (edge_t)(p.get_edgeProbability() * p.get_numNodes()) * (p.get_numNodes() -1));
+    } else {
+      p.set_numEdges( (edge_t)(p.get_edgeProbability() * p.get_numNodes()) * p.get_numNodes());
+    }
+  } else {
+    assert(p.get_numEdges() != 0);
+    if(p.get_selfloop() == false){
+      p.set_edgeProbability((double)(p.get_numEdges())/ (p.get_numNodes() * (p.get_numNodes() -1)));
+    } else {
+      p.set_edgeProbability((double)(p.get_numEdges())/ (p.get_numNodes() * p.get_numNodes()));
+    }
+  }
 
   /**
    * NOTICE: The base algorithm follows GT Graph generators. For original
    * GTGraph code and  licence etc see GTgraph folder
    **/
-  edge_t maxEdges = 0;
-  if(p.get_selfloop() == false) {
-    /* Should cover all edges 90 percent of time*/
-    maxEdges = (edge_t) ( 1.1 * ((p.get_edgeProbability()) * p.get_numNodes()) * (p.get_numNodes() -1));
-  } else {
-    maxEdges = (edge_t) ( 1.1 * ((p.get_edgeProbability()) * p.get_numNodes()) * (p.get_numNodes()));
-  }
+  edge_t maxEdges = 1.1 * p.get_numEdges();
   graph *G = allocateMemoryforGraph(p.get_numNodes(), maxEdges, p.get_weighted());
    
   /* Write the no. of edges later */
   node_t numNodes = p.get_numNodes();
+  G->numNodes  = numNodes;
   edge_t edg = 0;
   for (node_t i=0; i<numNodes; i++) {
     G->begin[i] = edg;
@@ -359,7 +368,9 @@ graph* erdosRenyiGenerator(GraphProperty& p) {
       }
     }
   }
+  printf("numNodes = %d, egdes = %d, maxEdges = %d \n", numNodes, edg, maxEdges);
   G->begin[numNodes] = edg;
+  G->numEdges = edg;
   assert(edg <= maxEdges);
   delete stream1;
   delete stream2;
