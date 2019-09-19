@@ -7,7 +7,7 @@
 #include<stdio.h>
 #include "graphEnum.h"
 void printTiming(executionSection section, double timeelapsed);
-void pringMsg(int NoOfMsgs, char**msgs);
+void printMsg(int NoOfMsgs,const char**msgs);
 void printError(errorCodes code, int NoOfMsgs,const char** msgs);
 #endif
 

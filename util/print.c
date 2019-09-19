@@ -24,7 +24,7 @@ void printTiming(executionSection section, double timeelapsed) {
 
 }
 
-void pringMsg(int NoOfMsgs, char**msgs) {
+void printMsg(int NoOfMsgs, const  char**msgs) {
   int i;
   for(i=0; i< NoOfMsgs;i++) {
     printf("\t%s", msgs[i]);

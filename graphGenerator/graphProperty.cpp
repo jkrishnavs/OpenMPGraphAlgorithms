@@ -44,6 +44,12 @@ GraphProperty::GraphProperty() {
   minWeight = 1; // iw
 }
 
+void GraphProperty::update_SSBMdata(double A, double B, node_t k) {
+  ssbm.alpha  = A;
+  ssbm.beta = B;
+  ssbm.k  = k;
+}
+
 bool GraphProperty::updateConfigs(const std::string configfile) {
   FILE *f;
 
@@ -73,6 +79,8 @@ bool GraphProperty::updateConfigs(const std::string configfile) {
     model = ErdosRenyi;
   } else if(!strcmp(modelType, "rmat")) {
     model = RMAT;
+  } else if(!strcmp(modelType, "ssbm")) {
+    model = SSBM;
   } else if(!strcmp(modelType, "auto")) {
     model = Auto;
   } else{
@@ -107,6 +115,12 @@ bool GraphProperty::updateConfigs(const std::string configfile) {
       rmat.c = val;
     } else if(!strcmp(propType, "rmat.d")){
       rmat.d = val;
+    } else if(!strcmp(propType, "ssbm.k")){
+      ssbm.k = val;
+    } else if(!strcmp(propType, "ssbm.alpha")){
+      ssbm.alpha = val;
+    } else if(!strcmp(propType, "ssbm.beta")){
+      ssbm.beta = val;
     } else {
       char *prop = propType;
       const char *errorMsg[1] = { prop};

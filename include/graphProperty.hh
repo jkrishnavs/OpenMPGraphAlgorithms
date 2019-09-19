@@ -13,8 +13,17 @@ typedef enum GraphModel {
   LSSBM, // Log Sum Stochastic Block Model
   PCGG, // Property Controlled Graph Generation
   SSCA, // GT graph generator. http://www.cse.psu.edu/~kxm85/software/GTgraph/gen.pdf
+  DGG, // Diagonal Graph Generator
+  LDNG, // Low degree network graph generator
   Auto // Auto generate the model from other features.
 } GraphModel;
+
+
+struct SSBMdata{
+  node_t k; // number of clusters
+  double alpha; // intra cluster edges
+  double beta; // inter cluster edges
+};
 
 
 struct RMATdata{
@@ -72,6 +81,10 @@ private:
    ** RMAT data
    ***/
   RMATdata rmat;
+  /***
+   * SSBM data
+   ***/
+  SSBMdata ssbm;
   
   bool degreeflag;
   bool densityflag;
@@ -109,6 +122,8 @@ public:
   double get_aed() {return aed;}
   double get_density() {return density;}
   RMATdata& get_RMATdata() {return rmat; }
+  SSBMdata& get_SSBMdata() {return ssbm;}
+  void update_SSBMdata(double A, double B, node_t k);
   void set_numNodes(node_t n) {numNodes = n;}
   void set_numEdges(edge_t e) {numEdges = e;}
   void set_edgeProbability(double p) { edgeProbability = p;}
