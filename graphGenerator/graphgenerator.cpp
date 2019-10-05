@@ -159,11 +159,6 @@ int runalgo(int argc, char** argv) {
   writeBackGraph(G, argv[2]);
   double avgincident =  (double)G->numEdges / G->numNodes;
   /*** Graph prop collection ***/
-  double clusterCoeff = avgClusterCoeff(G);
-  double aed = avgEdgeDistance(G);
-  node_t dim = diameter(G);
-  double sparsityMeasure  = sparsity(G);
-  double scaledT= triangle_counting(G);
   printf("Avg Adjecency =  %f \n", avgincident);
   printf("\nAvg ClusterCoeff = %f \n", clusterCoeff);
   printf("Avg Edge Distance = %f \n", aed);

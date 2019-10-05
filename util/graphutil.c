@@ -26,7 +26,7 @@ void createReverseEdge(graph* G) {
 void writeGraph(graph* G, const char* filename) {
   struct timeval start, end;
   gettimeofday(&start, NULL);
-  writeBackGraph(G, filename);
+  writeEdgeListGraph(G, filename);
   gettimeofday(&end, NULL);
   printTiming(GRAPHWRITE,((end.tv_sec - start.tv_sec)*1000 + ((double)(end.tv_usec - start.tv_usec))/1000));
 

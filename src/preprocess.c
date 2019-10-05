@@ -6,6 +6,7 @@
 //#include "communities.h"
 #include "graphprop.h"
 #include "nodeIntMap.h"
+#include <string.h>
 
 
 #define DEBUG_ON
@@ -640,6 +641,10 @@ graph* preprocess(graph* G, const char* mapfile) {
 
 double avgincident;
 double scaledT;
+double clusterCoeff;
+double aed;
+node_t dim;
+double sparsityMeasure;
 void writeSchema(const char *filename) {
   FILE *fp = fopen(filename, "w");
   fprintf(fp, "Avg Adjecency =  %f \n", avgincident);
@@ -657,7 +662,9 @@ int runalgo(int argc,char** argv) {
   graph* G = readGraph(argv[1], argv[2]);
   adj = atoi(argv[6]);
   if(argc < 7) {
-    const char* argList[6] = {" <inputfile> " , "graphformat.txt","<outputfile>", "<outputpropfile>", "<outputmapfilename>", "<adjecencyflag>"};
+    const char* argList[6] = {" <inputfile> " , "graphformat.txt","<outputfile>",
+			      "<outputpropfile>", "<outputmapfilename>",
+			      "<adjecencyflag>[0/1] [no revrse/reverse]"};
     printError(INCORRECT_ARG_LIST, 6, argList);
     return -1;
 
@@ -667,6 +674,12 @@ int runalgo(int argc,char** argv) {
   avgincident = ((double) G->numEdges )/ G->numNodes;
   
   writeBackGraph(newG, argv[3]);
+  clusterCoeff = avgClusterCoeff(G);
+  aed = avgEdgeDistance(G);
+  dim = diameter(G);
+  sparsityMeasure  = sparsity(G);
+  double T = triangle_counting(G);
+
   avgClusterCoeff(newG);
   avgEdgeDistance(newG);
   diameter(newG);

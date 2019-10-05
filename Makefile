@@ -57,10 +57,10 @@ debug: $(DEBUGS)
 
 #######	$(CC) $(LDFLAGS) -o $(basename $(notdir $<)) $
 ifeq ($(TASKLOOP_DEFINED), yes)
-$(SRCS):
+$(SRCS):  $(UTIL)/*.c 
 	$(CC) -D $(CAPABILITY) $(ONLINECORESFLAG) $(INC) $(LDFLAGS) $(TASKFL) $(UTILS) $@ $(EM) -o $(BIN)/$(basename $(notdir $@))_task
 else
-$(SRCS): 
+$(SRCS):  $(UTIL)/*.c 
 endif
 	$(CC) -D $(CAPABILITY) $(ONLINECORESFLAG) $(INC)  $(LDFLAGS)   $(UTILS) $@  $(EM) -o $(BIN)/$(basename $(notdir $@))_static  
 	$(CC) -D $(CAPABILITY) $(ONLINECORESFLAG) $(INC) $(LDFLAGS) $(DYNAMICFL)  $(UTILS) $@ $(EM) -o $(BIN)/$(basename $(notdir $@))_dynamic 
@@ -69,6 +69,9 @@ endif
 
 preprocess:
 	$(CC) -D $(CAPABILITY) $(INCWITOUTBIGLITTLE)  $(LDFLAGS) -D PAR_CHUNKSIZE=1024  -o $(BIN)/preprocess  $(UTIL)/*.c $(SRC)/preprocess.c
+
+moveedges:
+	$(CC) -g -D $(CAPABILITY) $(INCWITOUTBIGLITTLE)  $(LDFLAGS) -D PAR_CHUNKSIZE=1024  -o $(BIN)/moveedges  $(UTIL)/*.c $(SRC)/moveedges.c
 
 graphgenerator: $(UTIL)/*.c  $(GG)/graphProperty.cpp  $(GG)/graphgenerator.cpp 
 	$(CPP) -D $(CAPABILITY) $(INCWITOUTBIGLITTLE)  $(LDFLAGS) -D PAR_CHUNKSIZE=1024  -o $(BIN)/graphgenerator  $(UTIL)/*.c  $(GG)/graphProperty.cpp  $(GG)/graphgenerator.cpp -lsprng  ${SPRNG_BIN[@]/#/'/usr/local/bin/'}
