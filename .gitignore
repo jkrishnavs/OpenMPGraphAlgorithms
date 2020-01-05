@@ -1,3 +1,4 @@
+src/sprng2.0-lite/*
 /lock/*
 /traindata/*
 *.sh
